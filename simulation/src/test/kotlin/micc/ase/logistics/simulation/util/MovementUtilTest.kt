@@ -11,8 +11,8 @@ class MovementUtilTest {
     @Test
     fun test_1() {
 
-        val lagerhausSchwechat = Customer("Lagerhaus Schwechat", 48.144759, 16.466031)
-        val lagerhausHollabrunn = Customer("Lagerhaus Hollabrunn", 48.569676, 16.080248)
+        val lagerhausSchwechat = Customer(1, "Lagerhaus Schwechat", 48.144759, 16.466031)
+        val lagerhausHollabrunn = Customer(2, "Lagerhaus Hollabrunn", 48.569676, 16.080248)
 
         val newPosition = move(lagerhausSchwechat, lagerhausHollabrunn,60.0)
     }
@@ -20,8 +20,8 @@ class MovementUtilTest {
     @Test
     fun test_2() {
 
-        val lagerhausHorn = Customer("Lagerhaus Horn", 48.663899, 15.639511)
-        val obiKrems = Customer("OBI Krems", 48.406988, 15.654453)
+        val lagerhausHorn = Customer(3, "Lagerhaus Horn", 48.663899, 15.639511)
+        val obiKrems = Customer(4, "OBI Krems", 48.406988, 15.654453)
 
         val newPosition = move(lagerhausHorn, obiKrems,60.0)
     }
@@ -29,8 +29,8 @@ class MovementUtilTest {
     @Test
     fun test_3() {
 
-        val lagerhausSchwechat = Customer("Lagerhaus Schwechat", 48.144759, 16.466031)
-        val lagerhausHollabrunn = Customer("Lagerhaus Hollabrunn", 48.569676, 16.080248)
+        val lagerhausSchwechat = Customer(1, "Lagerhaus Schwechat", 48.144759, 16.466031)
+        val lagerhausHollabrunn = Customer(2, "Lagerhaus Hollabrunn", 48.569676, 16.080248)
 
         var lastPosition: Location = lagerhausSchwechat
         var currentPosition = move(lagerhausSchwechat, lagerhausHollabrunn,60.0)

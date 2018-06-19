@@ -24,7 +24,9 @@ public class Visit {
         long min = duration /  (1000 * 60);
         this.durationString = min + "min";
         this.goodsCheckingStart = goodsCheckingStart;
-        this.goodsCheckingStartLocalTimeString = DF.format(goodsCheckingStart);
+        if (goodsCheckingStart != null) {
+            this.goodsCheckingStartLocalTimeString = DF.format(goodsCheckingStart);
+        }
     }
 
     public Arrival getArrival() {
@@ -80,6 +82,7 @@ public class Visit {
         return "Visit{" +
                 "vehicle=" + arrival.getVehicleId() +
                 ", location=" + arrival.getLocation() +
+                ", arrived=" + arrival.getLocalTimeString() +
                 ", duration=" + duration +
                 ", durationString=" + durationString +
                 '}';

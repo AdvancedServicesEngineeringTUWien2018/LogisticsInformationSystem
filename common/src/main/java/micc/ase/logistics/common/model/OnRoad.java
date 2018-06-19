@@ -17,6 +17,11 @@ public class OnRoad implements Location, Serializable {
         this.longitude = longitude;
     }
 
+    @Override
+    public Integer getId() {
+        return -1;
+    }
+
     public String getName() {
         return name;
     }

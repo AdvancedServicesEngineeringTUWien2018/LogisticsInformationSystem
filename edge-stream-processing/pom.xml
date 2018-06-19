@@ -143,11 +143,11 @@
       <artifactId>edgent-connectors-jdbc</artifactId>
       <version>${edgent.runtime.version}</version>
     </dependency-->
-    <!--dependency>
+    <dependency>
       <groupId>${edgent.runtime.groupId}</groupId>
       <artifactId>edgent-connectors-kafka</artifactId>
       <version>${edgent.runtime.version}</version>
-    </dependency-->
+    </dependency>
     <!--dependency>
       <groupId>${edgent.runtime.groupId}</groupId>
       <artifactId>edgent-connectors-mqtt</artifactId>

@@ -20,8 +20,10 @@ package micc.ase.logistics.edge;
 
 import micc.ase.logistics.common.calc.Distance;
 import micc.ase.logistics.common.event.*;
-import micc.ase.logistics.common.model.*;
-import micc.ase.logistics.common.sensor.CSVFileEmulatedGPSSensor;
+import micc.ase.logistics.common.model.Location;
+import micc.ase.logistics.common.model.OnRoad;
+import micc.ase.logistics.common.model.Tour;
+import micc.ase.logistics.common.sensor.SimulationGPSSensor;
 import micc.ase.logistics.edge.sensor.EdgentGPSSensor;
 import org.apache.edgent.function.BiFunction;
 import org.apache.edgent.function.Function;
@@ -31,48 +33,35 @@ import org.apache.edgent.topology.Topology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
  * Edgent Application template.
  */
-public class EdgentLogisticsAppSimulation {
+public class EdgentEdgeDevice {
 
-    private final static Logger LOG = LoggerFactory.getLogger(EdgentLogisticsAppSimulation.class);
+    private final static Logger LOG = LoggerFactory.getLogger(EdgentEdgeDevice.class);
 
     /**
      * Print "Hello Edgent Application Template!" as four tuples.
-     * @param args command arguments
      * @throws Exception on failure
      */
-    public static void main(String[] args) throws Exception {
+    public void start(SimulationGPSSensor sensor, Tour tour) throws Exception {
 
-
-        Depot depot = new Depot("Depot", 48.4678453,15.9922776);
-        Customer baden = new Customer(1, "Baden", 47.9758152, 16.2796804);
-        Customer neusiedl = new Customer(2, "Neusiedl",47.9700418, 16.8388403);
-        Customer inzersdorf = new Customer(3, "Inzersdorf", 48.1383041,16.3407466);
-
-        Tour tour = new Tour(depot, baden, neusiedl, inzersdorf);
-
+        System.out.println("start edge device!!!");
 
         DirectProvider provider = new DirectProvider();
         Topology topology = provider.newTopology();
 
-        EdgentGPSSensor sensor = new EdgentGPSSensor(new CSVFileEmulatedGPSSensor("../data/gps-data-1.csv"));
+        EdgentGPSSensor s = new EdgentGPSSensor(sensor);
 
-        TStream<GPSCoordinates> coordsStream = topology.poll(sensor, 10, TimeUnit.MILLISECONDS);
+        TStream<GPSCoordinates> coordsStream = topology.generate(s);
 
         final int minStayMinutes = 2;                       // only detect as stop when staying for 2 minutes, might have just passed the destination
         final int faultyCoordsToleratedInARow = 1;
         final double stopRadiusAccuracy = 100.0 / 1000.0;   // everything within 100m is still at the stop
-
-        final DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         TStream<Arrival> arrivalsStream = coordsStream.flatMap(new Function<GPSCoordinates, Iterable<Arrival>>() {
 
@@ -183,7 +172,7 @@ public class EdgentLogisticsAppSimulation {
 
                 if (!arrived && !movedOn && stayedLongEnough && consecutiveCoordsWithinCorridor >= 3) {
                     List<Arrival> result = new LinkedList<>();
-                    result.add(new Arrival(1, nearDestination, first.getTimestamp()));
+                    result.add(new Arrival(coords.getVehicleId(), nearDestination, first.getTimestamp()));
                     arrived = true;
 
                     return result;
@@ -277,13 +266,33 @@ public class EdgentLogisticsAppSimulation {
                 });
 
 
+
+        /*
+        Map<String, Object> config = new HashMap<>();
+        config.put("bootstrap.servers", "localhost:9092");
+//        config.put("zookeeper.connect", "localhost:2181");
+
+        KafkaProducer producer = new KafkaProducer(topology, () -> config);
+
+        producer.publish(arrivalsStream,
+                (Function<Arrival, String>) value -> {
+                    return value.getVehicleId().toString();
+                },                               // key
+                (Function<Arrival, String>) value -> "{ \"vid\": " + value.getVehicleId() + ", \"locationId\": \"" + value.getLocation().getId() + ", \"location\": \"" + value.getLocation().getName() + "\", \"timestamp\": " + value.getTimestamp() + " }",    // value
+                (Function<Arrival, String>) value -> "arrivals",                        // topic
+                (Function<Arrival, Integer>) value -> 0//value.getVehicleId() % 1          // partition
+        );
+        */
+
 //        coordsStream.print();
 //        movementsStream.print();
-        arrivalsStream.print();
-        departuresStream.print();
+//        arrivalsStream.print();
+//        departuresStream.print();
         visitsStream.print();
 
-
         provider.submit(topology);
+
+        System.out.println("edge device started");
     }
+
 }

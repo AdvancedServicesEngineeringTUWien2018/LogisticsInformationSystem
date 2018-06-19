@@ -16,6 +16,11 @@ public class Depot implements Location, Serializable {
         this.longitude = longitude;
     }
 
+    @Override
+    public Integer getId() {
+        return 0;
+    }
+
     public String getName() {
         return name;
     }

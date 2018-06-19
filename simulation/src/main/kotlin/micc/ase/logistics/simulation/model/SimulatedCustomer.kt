@@ -16,6 +16,8 @@ class SimulatedCustomer(
         val demandDistribution: DemandDistribution
 ) : Location {
 
+    override fun getId() = customer.id
+
     override fun toString(): String {
         return "SimulatedCustomer(customer=$customer, unloadSlots=$unloadSlots, checkSpeed=$checkSpeed, deliveriesPerYear=$deliveriesPerYear, demandDistribution=$demandDistribution)"
     }

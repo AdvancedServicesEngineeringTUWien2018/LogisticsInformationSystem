@@ -19,6 +19,7 @@ class LiveCustomer(
     private var goodsTakeoverAt: LiveVehicle? = null
     private var checkFinishedAt: Long? = null
 
+    override fun getId()      = simulatedCustomer.id
     override fun getName()      = simulatedCustomer.name
     override fun getLatitude()  = simulatedCustomer.latitude
     override fun getLongitude() = simulatedCustomer.longitude
@@ -49,7 +50,7 @@ class LiveCustomer(
     }
 
     private fun startGoodsCheck(vehicle: Pair<LiveVehicle, Long>) {
-        println("customer $name checks vehicle ${vehicle.first.id}")
+//        println("customer $name checks vehicle ${vehicle.first.id}")
         goodsTakeoverAt = vehicle.first
         checkFinishedAt = vehicle.first.startGoodsCheck(this)
         indicateCheckStart()
@@ -58,7 +59,7 @@ class LiveCustomer(
     private fun everythingChecked() = checkFinishedAt!! <= CURRENT_TIMESTAMP
 
     private fun finishCheck() {
-        println("customer $name finished goods checks from vehicle ${goodsTakeoverAt?.id}")
+//        println("customer $name finished goods checks from vehicle ${goodsTakeoverAt?.id}")
         val index = slots.indexOfFirst { it?.first == goodsTakeoverAt }
         slots[index] = null
         val vehicle = goodsTakeoverAt!!
@@ -90,5 +91,10 @@ class LiveCustomer(
         }
 
     }
+
+    override fun toString(): String {
+        return "LiveCustomer(customer=${simulatedCustomer.name})"
+    }
+
 
 }

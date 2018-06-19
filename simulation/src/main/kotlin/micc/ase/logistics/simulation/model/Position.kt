@@ -10,6 +10,10 @@ class Position(
     private val latitude = latitude
     private val longitude = longitude
 
+    override fun getId(): Int {
+        return -3
+    }
+
     override fun getLatitude(): Double {
         return latitude
     }

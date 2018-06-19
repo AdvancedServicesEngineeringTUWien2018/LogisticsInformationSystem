@@ -4,13 +4,15 @@ import java.io.Serializable;
 
 public class Customer implements Location, Serializable {
 
+    private Integer id;
     private String name;
     private Double latitude;
     private Double longitude;
 
     public Customer() {}
 
-    public Customer(String name, double latitude, double longitude) {
+    public Customer(Integer id, String name, double latitude, double longitude) {
+        this.id = id;
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -40,6 +42,14 @@ public class Customer implements Location, Serializable {
         this.longitude = longitude;
     }
 
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
     @Override
     public String toString() {
         return "Customer '" + name + '\'';
@@ -52,11 +62,11 @@ public class Customer implements Location, Serializable {
 
         Customer customer = (Customer) o;
 
-        return name != null ? name.equals(customer.name) : customer.name == null;
+        return id != null ? id.equals(customer.id) : customer.id == null;
     }
 
     @Override
     public int hashCode() {
-        return name != null ? name.hashCode() : 0;
+        return id != null ? id.hashCode() : 0;
     }
 }

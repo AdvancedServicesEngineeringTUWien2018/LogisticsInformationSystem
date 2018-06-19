@@ -1,9 +1,11 @@
 package micc.ase.logistics.simulation.model.live
 
 import micc.ase.logistics.common.calc.Distance
+import micc.ase.logistics.common.event.GPSCoordinates
 import micc.ase.logistics.common.model.Depot
 import micc.ase.logistics.common.model.Location
 import micc.ase.logistics.common.model.Tour
+import micc.ase.logistics.common.sensor.SimulationGPSSensor
 import micc.ase.logistics.simulation.UncertainDouble
 import micc.ase.logistics.simulation.model.Position
 import micc.ase.logistics.simulation.model.SimulatedSupplier
@@ -15,7 +17,8 @@ class LiveVehicle(
         val id: Int,
         position: Position,
         val supplier: SimulatedSupplier,
-        val speed: UncertainDouble
+        val speed: UncertainDouble,
+        val sensor: SimulationGPSSensor
 ) {
 
     var position = position
@@ -46,8 +49,6 @@ class LiveVehicle(
 
     fun arriveAt(location: Location) {
 
-        println("Vehicle $id arrives at " + location.name + ", timestamp: " + CURRENT_TIMESTAMP)
-
         at = location
         when (location) {
             is LiveCustomer -> {
@@ -73,6 +74,8 @@ class LiveVehicle(
     }
 
     fun processMinute() {
+
+        sensor.capture(GPSCoordinates(id, position.latitude, position.longitude, CURRENT_TIMESTAMP))
 
         when (status) {
             VehicleStatus.UNLOADING -> {

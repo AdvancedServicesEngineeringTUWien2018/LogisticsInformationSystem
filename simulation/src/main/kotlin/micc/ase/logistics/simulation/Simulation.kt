@@ -1,6 +1,8 @@
 package micc.ase.logistics.simulation
 
 import micc.ase.logistics.common.model.*
+import micc.ase.logistics.common.sensor.GPSSensor
+import micc.ase.logistics.edge.EdgentEdgeDevice
 import micc.ase.logistics.simulation.model.DemandDistribution
 import micc.ase.logistics.simulation.model.live.LiveCustomer
 import micc.ase.logistics.simulation.model.SimulatedCustomer
@@ -42,29 +44,29 @@ class Simulation {
 
     fun simulate() {
 
-        val obiKrems = Customer("OBI Krems", 48.406988, 15.654453)
-        val bellafloraKrems = Customer("Bellaflora Krems", 48.407813, 15.660239)
-        val lagerhausTulln = Customer("Lagerhaus Tulln", 48.321657, 16.078680)
-        val obiTulln = Customer("OBI Tulln", 48.317947, 16.019311)
-        val fetterStockerau = Customer("Fetter Stockerau", 48.389257, 16.182436)
-        val obiStockerau = Customer("OBI Stockerau", 48.387829, 16.181327)
-        val fetterHollabrunn = Customer("Fetter Hollabrunn", 48.564564, 16.075602)
-        val lagerhausHollabrunn = Customer("Lagerhaus Hollabrunn", 48.569676, 16.080248)
-        val lagerhausMistelbach = Customer("Lagerhaus Mistelbach", 48.564714, 16.562467)
-        val lagerhausLaa = Customer("Lagerhaus Laa/Thaya", 48.714777, 16.378221)
-        val lagerhausEggenburg = Customer("Lagerhaus Eggenburg", 48.645971, 15.823033)
-        val lagerhausHorn = Customer("Lagerhaus Horn", 48.663899, 15.639511)
-        val obiNeusiedl = Customer("OBI Neusiedl/See", 47.969247, 16.839363)
-        val lagerhausMattersburg = Customer("Lagerhaus Mattersburg", 47.733876, 16.410021)
-        val lagerhausEisenstadt = Customer("Lagerhaus Eisenstadt", 47.838738, 16.527066)
-        val obiBaden = Customer("OBI Baden", 47.976119, 16.281574)
-        val lagerhausSchwechat = Customer("Lagerhaus Schwechat", 48.144759, 16.466031)
-        val lagerhausGerasdorf = Customer("Lagerhaus Gerasdorf", 48.297028, 16.484233)
-        val obiHadikgasse = Customer("OBI Wien Hadikgasse", 48.192676, 16.282503)
-        val obiTriesterstrasse = Customer("OBI Wien Triesterstraße", 48.178657, 16.357772)
-        val obiVoesendorf = Customer("OBI Vösendorf", 48.118470, 16.314756)
-        val obiStMarx = Customer("OBI Wien St. Marx", 48.186285, 16.410233)
-        val obiKlosterneuburg = Customer("OBI Klosterneuburg", 48.294656, 16.337393)
+        val obiKrems = Customer(1, "OBI Krems", 48.406988, 15.654453)
+        val bellafloraKrems = Customer(2, "Bellaflora Krems", 48.407813, 15.660239)
+        val lagerhausTulln = Customer(3, "Lagerhaus Tulln", 48.321657, 16.078680)
+        val obiTulln = Customer(4, "OBI Tulln", 48.317947, 16.019311)
+        val fetterStockerau = Customer(5, "Fetter Stockerau", 48.389257, 16.182436)
+        val obiStockerau = Customer(6, "OBI Stockerau", 48.387829, 16.181327)
+        val fetterHollabrunn = Customer(7, "Fetter Hollabrunn", 48.564564, 16.075602)
+        val lagerhausHollabrunn = Customer(8, "Lagerhaus Hollabrunn", 48.569676, 16.080248)
+        val lagerhausMistelbach = Customer(9, "Lagerhaus Mistelbach", 48.564714, 16.562467)
+        val lagerhausLaa = Customer(10, "Lagerhaus Laa/Thaya", 48.714777, 16.378221)
+        val lagerhausEggenburg = Customer(11, "Lagerhaus Eggenburg", 48.645971, 15.823033)
+        val lagerhausHorn = Customer(12, "Lagerhaus Horn", 48.663899, 15.639511)
+        val obiNeusiedl = Customer(13, "OBI Neusiedl/See", 47.969247, 16.839363)
+        val lagerhausMattersburg = Customer(14, "Lagerhaus Mattersburg", 47.733876, 16.410021)
+        val lagerhausEisenstadt = Customer(15, "Lagerhaus Eisenstadt", 47.838738, 16.527066)
+        val obiBaden = Customer(16, "OBI Baden", 47.976119, 16.281574)
+        val lagerhausSchwechat = Customer(17, "Lagerhaus Schwechat", 48.144759, 16.466031)
+        val lagerhausGerasdorf = Customer(18, "Lagerhaus Gerasdorf", 48.297028, 16.484233)
+        val obiHadikgasse = Customer(19, "OBI Wien Hadikgasse", 48.192676, 16.282503)
+        val obiTriesterstrasse = Customer(20, "OBI Wien Triesterstraße", 48.178657, 16.357772)
+        val obiVoesendorf = Customer(21, "OBI Vösendorf", 48.118470, 16.314756)
+        val obiStMarx = Customer(22, "OBI Wien St. Marx", 48.186285, 16.410233)
+        val obiKlosterneuburg = Customer(23, "OBI Klosterneuburg", 48.294656, 16.337393)
 
         val allCustomers = setOf(obiKrems, bellafloraKrems, lagerhausTulln, obiTulln, fetterStockerau, obiStockerau, lagerhausHollabrunn, fetterHollabrunn, lagerhausMistelbach, lagerhausLaa, lagerhausEggenburg, lagerhausHorn, obiNeusiedl, lagerhausMattersburg, lagerhausEisenstadt, obiBaden, lagerhausSchwechat, lagerhausGerasdorf, obiHadikgasse, obiTriesterstrasse, obiVoesendorf, obiStMarx, obiKlosterneuburg)
 
@@ -94,21 +96,24 @@ class Simulation {
         val latitudeRange = (allCustomers.map { it.latitude }.min()!!)..(allCustomers.map { it.latitude }.max()!!)
         val longitudeRange = (allCustomers.map { it.longitude }.min()!!)..(allCustomers.map { it.longitude }.max()!!)
 
-        val suppliers = (100..300).map { supplierId ->
+        val suppliers = (100..199).map { supplierId ->
 
             val depot = Depot("Supplier $supplierId depot",
                     randomDouble(latitudeRange.start, latitudeRange.endInclusive),
                     randomDouble(longitudeRange.start, longitudeRange.endInclusive))
             val unloadDuration = UncertainDouble(randomDouble(6.0..14.0), randomDouble(2.0..4.0))
+            val vehicleCount = randomInt(1,8)
 
-            SimulatedSupplier(supplierId, depot, unloadDuration, randomInt(1, 15))
+            SimulatedSupplier(supplierId, depot, unloadDuration, vehicleCount)
         }
 
-        println(suppliers.joinToString("\n- ") { supplier ->
-            with(supplier) {
-                "Supplier $id: ${vehicles} vehicles @(${depot.latitude}|${depot.longitude})"
-            }
-        })
+        val allSensors = suppliers.flatMap { it.sensors }
+
+//        println(suppliers.joinToString("\n- ") { supplier ->
+//            with(supplier) {
+//                "Supplier $id: ${vehicles} vehicles @(${depot.latitude}|${depot.longitude})"
+//            }
+//        })
 
         val simulatedCustomers = allCustomers.map { customer ->
 
@@ -117,8 +122,8 @@ class Simulation {
             val checkSpeed = UncertainDouble(randomDouble(4.0, 8.0), randomDouble(1.0, 3.0))
             val deliveriesPerYear = when (unloadSlots) {
 
-                in 1..2 -> randomInt(3000, 12000)
-                else    -> randomInt(3000, 30000)
+                in 1..3 -> randomInt(3000,  8000)
+                else    -> randomInt(3000, 20000)
             }
             // demand
             val demandDistribution = {
@@ -218,7 +223,7 @@ class Simulation {
             val todaysDeliveriesPerCustomer = deliveries[date]!!.entries.joinToString("\n- ") { (customer, visits) ->
                 "${customer.name}: $visits"
             }
-            println("Today's deliveries in detail: $todaysDeliveriesPerCustomer")
+//            println("Today's deliveries in detail: $todaysDeliveriesPerCustomer")
 
             val liveCustomers = simulatedCustomers.map { customer ->
                 customer.createLiveCustomer(weekday)
@@ -260,9 +265,15 @@ class Simulation {
             }
 
 
-            println("scheduled vehicles: ${scheduledVehicles.size}:\n- ${scheduledVehicles.joinToString("\n- ") {
-                "vehicle ${it.id}: ${it.tour}"
-            }}")
+            scheduledVehicles.forEach { vehicle ->
+                val device = EdgentEdgeDevice()
+                device.start(vehicle.sensor, vehicle.tour)
+            }
+
+
+//            println("scheduled vehicles: ${scheduledVehicles.size}:\n- ${scheduledVehicles.joinToString("\n- ") {
+//                "vehicle ${it.id}: ${it.tour}"
+//            }}")
 
             val remainingVehicles = scheduledVehicles.toMutableSet()
 
@@ -280,18 +291,17 @@ class Simulation {
                 // if vehicle in slot AND finished unloading AND not finished goods check   -> progress goods check
                 // if vehicle in slot AND finished goods check                              -> go to next destination
 
-
                 minutes++
                 GLOBAL_TIME = GLOBAL_TIME.plusMinutes(1)
-                println("minutes: $minutes, now it is ${GLOBAL_TIME.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}... remaining vehicles: ${remainingVehicles.size}... " +
-                        "${remainingVehicles.filter { it.status == VehicleStatus.AT_HOME }.size} at home, " +
-                        "${remainingVehicles.filter { it.status == VehicleStatus.APPROACHING_CUSTOMER }.size} approaching customer, " +
-                        "${remainingVehicles.filter { it.status == VehicleStatus.WAITING_IN_QUEUE }.size} waiting in queue, " +
-                        "${remainingVehicles.filter { it.status == VehicleStatus.UNLOADING }.size} unloading, " +
-                        "${remainingVehicles.filter { it.status == VehicleStatus.WAITING_FOR_GOODS_CHECK }.size} waiting for goods check, " +
-                        "${remainingVehicles.filter { it.status == VehicleStatus.GOODS_CHECK }.size} at goods check, " +
-                        "${remainingVehicles.filter { it.status == VehicleStatus.ON_THE_WAY_HOME }.size} on the way home, " +
-                        "")
+//                println("minutes: $minutes, now it is ${GLOBAL_TIME.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}... remaining vehicles: ${remainingVehicles.size}... " +
+//                        "${remainingVehicles.filter { it.status == VehicleStatus.AT_HOME }.size} at home, " +
+//                        "${remainingVehicles.filter { it.status == VehicleStatus.APPROACHING_CUSTOMER }.size} approaching customer, " +
+//                        "${remainingVehicles.filter { it.status == VehicleStatus.WAITING_IN_QUEUE }.size} waiting in queue, " +
+//                        "${remainingVehicles.filter { it.status == VehicleStatus.UNLOADING }.size} unloading, " +
+//                        "${remainingVehicles.filter { it.status == VehicleStatus.WAITING_FOR_GOODS_CHECK }.size} waiting for goods check, " +
+//                        "${remainingVehicles.filter { it.status == VehicleStatus.GOODS_CHECK }.size} at goods check, " +
+//                        "${remainingVehicles.filter { it.status == VehicleStatus.ON_THE_WAY_HOME }.size} on the way home, " +
+//                        "")
 
                 remainingVehicles.forEach { vehicle ->
                     vehicle.processMinute()
@@ -304,12 +314,15 @@ class Simulation {
                 remainingVehicles.removeIf { it.finished }
             }
 
-
+            println("Last came back at ${GLOBAL_TIME.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}")
 
         }   // simulateDate method
 
 
         simulateDate(LocalDate.of(2017, Month.JANUARY, 2))
+
+
+        Thread.sleep(3000L)
 
         /*
         var date = LocalDate.of(2017, Month.JANUARY, 1)
