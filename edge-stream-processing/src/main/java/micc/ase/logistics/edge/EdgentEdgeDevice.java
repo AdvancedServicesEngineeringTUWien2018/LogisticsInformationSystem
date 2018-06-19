@@ -25,6 +25,7 @@ import micc.ase.logistics.common.model.OnRoad;
 import micc.ase.logistics.common.model.Tour;
 import micc.ase.logistics.common.sensor.SimulationGPSSensor;
 import micc.ase.logistics.edge.sensor.EdgentGPSSensor;
+import org.apache.edgent.connectors.kafka.KafkaProducer;
 import org.apache.edgent.function.BiFunction;
 import org.apache.edgent.function.Function;
 import org.apache.edgent.providers.direct.DirectProvider;
@@ -33,8 +34,10 @@ import org.apache.edgent.topology.Topology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -267,7 +270,6 @@ public class EdgentEdgeDevice {
 
 
 
-        /*
         Map<String, Object> config = new HashMap<>();
         config.put("bootstrap.servers", "localhost:9092");
 //        config.put("zookeeper.connect", "localhost:2181");
@@ -278,17 +280,16 @@ public class EdgentEdgeDevice {
                 (Function<Arrival, String>) value -> {
                     return value.getVehicleId().toString();
                 },                               // key
-                (Function<Arrival, String>) value -> "{ \"vid\": " + value.getVehicleId() + ", \"locationId\": \"" + value.getLocation().getId() + ", \"location\": \"" + value.getLocation().getName() + "\", \"timestamp\": " + value.getTimestamp() + " }",    // value
+                (Function<Arrival, String>) value -> "{ \"vehicleId\": " + value.getVehicleId() + ", \"locationId\": \"" + value.getLocation().getId() + "\", \"location\": \"" + value.getLocation().getName() + "\", \"timestamp\": " + value.getTimestamp() + " }",    // value
                 (Function<Arrival, String>) value -> "arrivals",                        // topic
                 (Function<Arrival, Integer>) value -> 0//value.getVehicleId() % 1          // partition
         );
-        */
 
 //        coordsStream.print();
 //        movementsStream.print();
-//        arrivalsStream.print();
+        arrivalsStream.print();
 //        departuresStream.print();
-        visitsStream.print();
+//        visitsStream.print();
 
         provider.submit(topology);
 
