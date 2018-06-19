@@ -64,7 +64,7 @@ public class EdgentLogisticsAppSimulation {
         DirectProvider provider = new DirectProvider();
         Topology topology = provider.newTopology();
 
-        EdgentGPSSensor sensor = new EdgentGPSSensor(new CSVFileEmulatedGPSSensor("data/gps-data-1.csv"));
+        EdgentGPSSensor sensor = new EdgentGPSSensor(new CSVFileEmulatedGPSSensor("../data/gps-data-1.csv"));
 
         TStream<GPSCoordinates> coordsStream = topology.poll(sensor, 10, TimeUnit.MILLISECONDS);
 

@@ -44,4 +44,19 @@ public class Customer implements Location, Serializable {
     public String toString() {
         return "Customer '" + name + '\'';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Customer)) return false;
+
+        Customer customer = (Customer) o;
+
+        return name != null ? name.equals(customer.name) : customer.name == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return name != null ? name.hashCode() : 0;
+    }
 }

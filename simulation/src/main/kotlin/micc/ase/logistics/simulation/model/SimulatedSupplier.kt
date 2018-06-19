@@ -1,0 +1,35 @@
+package micc.ase.logistics.simulation.model
+
+import micc.ase.logistics.common.model.Customer
+import micc.ase.logistics.common.model.Depot
+import micc.ase.logistics.common.model.Tour
+import micc.ase.logistics.simulation.UncertainDouble
+import micc.ase.logistics.simulation.model.live.LiveVehicle
+
+class SimulatedSupplier(
+        val id: Int,
+        val depot: Depot,
+        val unloadDuration: UncertainDouble,
+        /** 1 <= vehicles < 100 */
+        val vehicles: Int
+) {
+
+    init {
+        if (vehicles >= 100) {
+            throw IllegalArgumentException("One supplier must not have 100 or more vehicles")
+        }
+    }
+
+    /**
+     * @param tours tours of max length vehicles
+     */
+    fun createLiveVehicles(): Set<LiveVehicle> {
+
+        return (1..vehicles).map { vehicleId ->
+            val vid = id * 100 + vehicleId
+            val startPosition = Position(depot.latitude, depot.longitude)
+            LiveVehicle(vid, startPosition, this, UncertainDouble(60.0, 5.0))
+        }.toSet()
+    }
+
+}

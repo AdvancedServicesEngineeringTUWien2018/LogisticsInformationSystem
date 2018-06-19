@@ -71,11 +71,11 @@
       <artifactId>edgent-providers-direct</artifactId>
       <version>${edgent.runtime.version}</version>
     </dependency>
-      <dependency>
-          <groupId>micc</groupId>
-          <artifactId>common</artifactId>
-          <version>0.0.1-SNAPSHOT</version>
-      </dependency>
+    <dependency>
+      <groupId>micc</groupId>
+      <artifactId>common</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
       <!--dependency>
         <groupId>${edgent.runtime.groupId}</groupId>
         <artifactId>edgent-providers-development</artifactId>

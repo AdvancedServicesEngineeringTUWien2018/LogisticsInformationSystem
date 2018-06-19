@@ -6,7 +6,7 @@ import micc.ase.logistics.common.model.Location;
 
 public class Distance {
 
-    private final static double R = 6372.8;
+    public final static double R = 6372.8;
 
     public static double haversine(double lat1, double lon1, double lat2, double lon2) {
         double dLat = Math.toRadians(lat2 - lat1);
@@ -25,6 +25,10 @@ public class Distance {
 
     public static double haversine(Location location, GPSCoordinates coords) {
         return haversine(location.getLatitude(), location.getLongitude(), coords.getLatitude(), coords.getLongitude());
+    }
+
+    public static double haversine(Location location1, Location location2) {
+        return haversine(location1.getLatitude(), location1.getLongitude(), location2.getLatitude(), location2.getLongitude());
     }
 
 }
