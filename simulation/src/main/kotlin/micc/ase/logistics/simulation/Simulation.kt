@@ -12,6 +12,7 @@ import micc.ase.logistics.simulation.model.live.VehicleStatus
 import micc.ase.logistics.simulation.util.*
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Month
 import java.time.format.DateTimeFormatter
 import kotlin.collections.HashMap
@@ -96,24 +97,22 @@ class Simulation {
         val latitudeRange = (allCustomers.map { it.latitude }.min()!!)..(allCustomers.map { it.latitude }.max()!!)
         val longitudeRange = (allCustomers.map { it.longitude }.min()!!)..(allCustomers.map { it.longitude }.max()!!)
 
-        val suppliers = (100..199).map { supplierId ->
+        val suppliers = (100..150).map { supplierId ->
 
             val depot = Depot("Supplier $supplierId depot",
                     randomDouble(latitudeRange.start, latitudeRange.endInclusive),
                     randomDouble(longitudeRange.start, longitudeRange.endInclusive))
             val unloadDuration = UncertainDouble(randomDouble(6.0..14.0), randomDouble(2.0..4.0))
-            val vehicleCount = randomInt(1,8)
+            val vehicleCount = randomInt(1,5)
 
             SimulatedSupplier(supplierId, depot, unloadDuration, vehicleCount)
         }
 
-        val allSensors = suppliers.flatMap { it.sensors }
-
-//        println(suppliers.joinToString("\n- ") { supplier ->
-//            with(supplier) {
-//                "Supplier $id: ${vehicles} vehicles @(${depot.latitude}|${depot.longitude})"
-//            }
-//        })
+        System.out.print("starting edge devices... ")
+        suppliers.forEach { supplier ->
+            supplier.startEdgeDevices()
+        }
+        System.out.println("all edge devices started!")
 
         val simulatedCustomers = allCustomers.map { customer ->
 
@@ -265,17 +264,11 @@ class Simulation {
             }
 
 
-            System.out.print("starting edge devices... ")
+            System.out.print("update tours on devices... ")
             scheduledVehicles.forEach { vehicle ->
-                val device = EdgentEdgeDevice()
-                device.start(vehicle.sensor, vehicle.tour)
+                vehicle.edgeDevice.changeTour(vehicle.tour)
             }
-            System.out.println("all edge devices started!")
-
-
-//            println("scheduled vehicles: ${scheduledVehicles.size}:\n- ${scheduledVehicles.joinToString("\n- ") {
-//                "vehicle ${it.id}: ${it.tour}"
-//            }}")
+            System.out.println("done!")
 
             val remainingVehicles = scheduledVehicles.toMutableSet()
 
@@ -283,11 +276,24 @@ class Simulation {
                 vehicle.startTour()
             }
 
+
+            val oneHourInXSeconds = 1
+            val gap = (oneHourInXSeconds * 1000.0 / 60.0).toLong()
+            var lastTimeMillis = System.currentTimeMillis()
+
+            System.out.println("Gap = $gap millis")
+
+            var lastReturned: LocalDateTime? = null
+
             var minutes = 0
             // simulate 1 minute every loop iteration
-            while (remainingVehicles.isNotEmpty() && GLOBAL_TIME.isBefore(date.plusDays(1).atStartOfDay())) {
+            while (GLOBAL_TIME.isBefore(date.plusDays(1).atStartOfDay())) {
 
-                Thread.sleep(100L)
+                val now = System.currentTimeMillis()
+                val elapsedMillis = now - lastTimeMillis
+                lastTimeMillis = now
+                val sleep = Math.max(0L, gap - elapsedMillis)
+                Thread.sleep(sleep)
 
                 // vehicles arrive, queue them
                 // if slot is free -> dequeue a vehicle and put it into the slot
@@ -295,8 +301,13 @@ class Simulation {
                 // if vehicle in slot AND finished unloading AND not finished goods check   -> progress goods check
                 // if vehicle in slot AND finished goods check                              -> go to next destination
 
+                if (GLOBAL_TIME.minute == 0) {
+                    println("It is ${GLOBAL_TIME.format(DateTimeFormatter.ofPattern("HH:mm:ss"))}")
+                }
+
                 minutes++
                 GLOBAL_TIME = GLOBAL_TIME.plusMinutes(1)
+
 //                println("minutes: $minutes, now it is ${GLOBAL_TIME.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}... remaining vehicles: ${remainingVehicles.size}... " +
 //                        "${remainingVehicles.filter { it.status == VehicleStatus.AT_HOME }.size} at home, " +
 //                        "${remainingVehicles.filter { it.status == VehicleStatus.APPROACHING_CUSTOMER }.size} approaching customer, " +
@@ -307,7 +318,7 @@ class Simulation {
 //                        "${remainingVehicles.filter { it.status == VehicleStatus.ON_THE_WAY_HOME }.size} on the way home, " +
 //                        "")
 
-                remainingVehicles.forEach { vehicle ->
+                scheduledVehicles.forEach { vehicle ->
                     vehicle.processMinute()
                 }
                 liveCustomers.forEach { customer ->
@@ -316,9 +327,18 @@ class Simulation {
 
 
                 remainingVehicles.removeIf { it.finished }
+
+                if (remainingVehicles.isEmpty() && lastReturned == null) {
+                    lastReturned = GLOBAL_TIME
+                    println("Last came back at ${GLOBAL_TIME.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}")
+                }
             }
 
-            println("Last came back at ${GLOBAL_TIME.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}")
+            if (lastReturned == null) {
+                println("There are still ${remainingVehicles.size} on tour!")
+            }
+
+            println("End of day :)")
 
         }   // simulateDate method
 

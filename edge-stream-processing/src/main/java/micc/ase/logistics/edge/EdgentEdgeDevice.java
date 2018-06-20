@@ -23,6 +23,7 @@ import micc.ase.logistics.common.event.*;
 import micc.ase.logistics.common.model.Location;
 import micc.ase.logistics.common.model.OnRoad;
 import micc.ase.logistics.common.model.Tour;
+import micc.ase.logistics.common.sensor.GPSSensor;
 import micc.ase.logistics.common.sensor.SimulationGPSSensor;
 import micc.ase.logistics.edge.sensor.EdgentGPSSensor;
 import org.apache.edgent.connectors.kafka.KafkaProducer;
@@ -47,11 +48,18 @@ public class EdgentEdgeDevice {
 
     private final static Logger LOG = LoggerFactory.getLogger(EdgentEdgeDevice.class);
 
+    private Tour tour = Tour.empty;
+    private SimulationGPSSensor sensor = null;
+
+    public EdgentEdgeDevice(SimulationGPSSensor sensor) {
+        this.sensor = sensor;
+    }
+
     /**
      * Print "Hello Edgent Application Template!" as four tuples.
      * @throws Exception on failure
      */
-    public void start(SimulationGPSSensor sensor, Tour tour) throws Exception {
+    public void start() throws Exception {
 
         DirectProvider provider = new DirectProvider();
         Topology topology = provider.newTopology();
@@ -291,6 +299,10 @@ public class EdgentEdgeDevice {
 
         provider.submit(topology);
 
+    }
+
+    public void changeTour(Tour tour) {
+        this.tour = tour;
     }
 
 }

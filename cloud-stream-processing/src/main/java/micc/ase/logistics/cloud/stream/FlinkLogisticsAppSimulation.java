@@ -47,7 +47,7 @@ public class FlinkLogisticsAppSimulation {
 
                 return new ArrivalDTO(vehicleId, locationId, location, timestamp);
             }
-        }).assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<ArrivalDTO>(Time.hours(1)) {
+        }).assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<ArrivalDTO>(Time.hours(8)) {
             @Override
             public long extractTimestamp(ArrivalDTO element) {
                 return element.getTimestamp();
@@ -61,7 +61,7 @@ public class FlinkLogisticsAppSimulation {
                         return 1L;
                     }
                 })
-                .timeWindowAll(Time.hours(1), Time.hours(1))
+                .timeWindowAll(Time.hours(1))
 //                .allowedLateness(Time.hours(6))
                 .reduce(new ReduceFunction<Long>() {
                     @Override

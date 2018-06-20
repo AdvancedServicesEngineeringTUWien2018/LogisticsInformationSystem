@@ -6,6 +6,7 @@ import micc.ase.logistics.common.model.Depot
 import micc.ase.logistics.common.model.Location
 import micc.ase.logistics.common.model.Tour
 import micc.ase.logistics.common.sensor.SimulationGPSSensor
+import micc.ase.logistics.edge.EdgentEdgeDevice
 import micc.ase.logistics.simulation.UncertainDouble
 import micc.ase.logistics.simulation.model.Position
 import micc.ase.logistics.simulation.model.SimulatedSupplier
@@ -18,7 +19,8 @@ class LiveVehicle(
         position: Position,
         val supplier: SimulatedSupplier,
         val speed: UncertainDouble,
-        val sensor: SimulationGPSSensor
+        val sensor: SimulationGPSSensor,
+        val edgeDevice: EdgentEdgeDevice
 ) {
 
     var position = position
@@ -76,6 +78,10 @@ class LiveVehicle(
     fun processMinute() {
 
         sensor.capture(GPSCoordinates(id, position.latitude, position.longitude, CURRENT_TIMESTAMP))
+
+        if (finished) {
+            return
+        }
 
         when (status) {
             VehicleStatus.UNLOADING -> {
