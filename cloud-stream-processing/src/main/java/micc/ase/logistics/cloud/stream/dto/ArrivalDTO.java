@@ -1,6 +1,9 @@
 package micc.ase.logistics.cloud.stream.dto;
 
 import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class ArrivalDTO implements Serializable {
 
@@ -8,6 +11,9 @@ public class ArrivalDTO implements Serializable {
     private Integer locationId;
     private String location;
     private Long timestamp;
+    private String timestampLocalTimeString;
+
+    private static final DateFormat DF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public ArrivalDTO() {
     }
@@ -17,6 +23,7 @@ public class ArrivalDTO implements Serializable {
         this.locationId = locationId;
         this.location = location;
         this.timestamp = timestamp;
+        this.timestampLocalTimeString = DF.format(new Date(timestamp));
     }
 
     public Integer getVehicleId() {
@@ -51,6 +58,14 @@ public class ArrivalDTO implements Serializable {
         this.timestamp = timestamp;
     }
 
+    public String getTimestampLocalTimeString() {
+        return timestampLocalTimeString;
+    }
+
+    public void setTimestampLocalTimeString(String timestampLocalTimeString) {
+        this.timestampLocalTimeString = timestampLocalTimeString;
+    }
+
     @Override
     public String toString() {
         return "ArrivalDTO{" +
@@ -58,6 +73,7 @@ public class ArrivalDTO implements Serializable {
                 ", locationId=" + locationId +
                 ", location='" + location + '\'' +
                 ", timestamp=" + timestamp +
+                ", timestampLocalTimeString=" + timestampLocalTimeString +
                 '}';
     }
 }
