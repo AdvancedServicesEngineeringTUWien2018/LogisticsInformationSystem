@@ -287,6 +287,8 @@ class Simulation {
             // simulate 1 minute every loop iteration
             while (remainingVehicles.isNotEmpty() && GLOBAL_TIME.isBefore(date.plusDays(1).atStartOfDay())) {
 
+                Thread.sleep(100L)
+
                 // vehicles arrive, queue them
                 // if slot is free -> dequeue a vehicle and put it into the slot
                 // if vehicle in slot AND not finished unloading                            -> progress unloading
