@@ -1,6 +1,6 @@
 <configuration>
     <appender name="file" class="ch.qos.logback.core.FileAppender">
-        <file>${log.file}</file>
+        <file>logs/flink.log</file>
         <append>false</append>
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{60} %X{sourceThread} - %msg%n</pattern>
