@@ -219,9 +219,9 @@ class Simulation {
             println("simulate ${date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}")
 
             val todaysDeliveries = deliveries[date]!!.map { it.value }.sum()
-            val todaysDeliveriesPerCustomer = deliveries[date]!!.entries.joinToString("\n- ") { (customer, visits) ->
-                "${customer.name}: $visits"
-            }
+//            val todaysDeliveriesPerCustomer = deliveries[date]!!.entries.joinToString("\n- ") { (customer, visits) ->
+//                "${customer.name}: $visits"
+//            }
 //            println("Today's deliveries in detail: $todaysDeliveriesPerCustomer")
 
             val liveCustomers = simulatedCustomers.map { customer ->
@@ -277,7 +277,7 @@ class Simulation {
             }
 
 
-            val oneHourInXSeconds = 1
+            val oneHourInXSeconds = 5
             val gap = (oneHourInXSeconds * 1000.0 / 60.0).toLong()
             var lastTimeMillis = System.currentTimeMillis()
 
@@ -347,6 +347,8 @@ class Simulation {
 
 
         Thread.sleep(3000L)
+
+        simulateDate(LocalDate.of(2017, Month.JANUARY, 3))
 
         /*
         var date = LocalDate.of(2017, Month.JANUARY, 1)

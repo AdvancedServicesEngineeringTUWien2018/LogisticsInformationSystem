@@ -283,19 +283,24 @@ public class EdgentEdgeDevice {
         KafkaProducer producer = new KafkaProducer(topology, () -> config);
 
         producer.publish(arrivalsStream,
-                (Function<Arrival, String>) value -> {
-                    return value.getVehicleId().toString();
-                },                               // key
-                (Function<Arrival, String>) value -> "{ \"vehicleId\": " + value.getVehicleId() + ", \"locationId\": \"" + value.getLocation().getId() + "\", \"location\": \"" + value.getLocation().getName() + "\", \"timestamp\": " + value.getTimestamp() + " }",    // value
-                (Function<Arrival, String>) value -> "arrivals",                        // topic
-                (Function<Arrival, Integer>) value -> 0//value.getVehicleId() % 1          // partition
+                (Function<Arrival, String>) value -> value.getVehicleId().toString(),    // key
+                (Function<Arrival, String>) value -> toJson(value),     // value
+                (Function<Arrival, String>) value -> "arrivals",        // topic
+                (Function<Arrival, Integer>) value -> 0                 // partition   value.getVehicleId() % 2  ??
+        );
+
+        producer.publish(visitsStream,
+                (Function<Visit, String>) value -> value.getArrival().getVehicleId().toString(),    // key
+                (Function<Visit, String>) value -> toJson(value),     // value
+                (Function<Visit, String>) value -> "visits",          // topic
+                (Function<Visit, Integer>) value -> 0                 // partition   value.getVehicleId() % 2  ??
         );
 
 //        coordsStream.print();
 //        movementsStream.print();
         arrivalsStream.print();
 //        departuresStream.print();
-//        visitsStream.print();
+        visitsStream.print();
 
         provider.submit(topology);
 
@@ -303,6 +308,23 @@ public class EdgentEdgeDevice {
 
     public void changeTour(Tour tour) {
         this.tour = tour;
+    }
+
+    private String toJson(Arrival arrival) {
+        return "{ \"vehicleId\": " + arrival.getVehicleId() +
+                ", \"locationId\": \"" + arrival.getLocation().getId() +
+                "\", \"location\": \"" + arrival.getLocation().getName() +
+                "\", \"timestamp\": " + arrival.getTimestamp() +
+                " }";
+    }
+
+    private String toJson(Visit visit) {
+        return "{ \"vehicleId\": " + visit.getArrival().getVehicleId() +
+                ", \"locationId\": " + visit.getArrival().getLocation().getId() +
+                ", \"location\": \"" + visit.getArrival().getLocation().getName() +
+                "\", \"arrivalTimestamp\": " + visit.getArrival().getTimestamp() +
+                ", \"departureTimestamp\": " + visit.getDeparture().getTimestamp() +
+                " }";
     }
 
 }

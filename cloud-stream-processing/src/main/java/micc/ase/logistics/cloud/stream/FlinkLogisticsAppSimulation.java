@@ -1,6 +1,10 @@
 package micc.ase.logistics.cloud.stream;
 
-import micc.ase.logistics.cloud.stream.dto.ArrivalDTO;
+import micc.ase.logistics.cloud.stream.aggregate.AvgVisitAggregateFunction;
+import micc.ase.logistics.cloud.stream.event.ArrivalDTO;
+import micc.ase.logistics.cloud.stream.event.AvgVisitDuration;
+import micc.ase.logistics.cloud.stream.event.VisitDTO;
+import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.formats.json.JsonNodeDeserializationSchema;
@@ -30,14 +34,14 @@ public class FlinkLogisticsAppSimulation {
         Properties properties = new Properties();
         properties.setProperty("bootstrap.servers", "localhost:9092");
         properties.setProperty("group.id", "");
-        SourceFunction<ObjectNode> source =
+        SourceFunction<ObjectNode> arrivalsSource =
                 new FlinkKafkaConsumer010<>(
                         "arrivals",
                         new JsonNodeDeserializationSchema(),
                         properties
                 );
 
-        DataStream<ArrivalDTO> arrivalsStream = env.addSource(source).map(new MapFunction<ObjectNode, ArrivalDTO>() {
+        DataStream<ArrivalDTO> arrivalsStream = env.addSource(arrivalsSource).map(new MapFunction<ObjectNode, ArrivalDTO>() {
             @Override
             public ArrivalDTO map(ObjectNode value) throws Exception {
                 Integer vehicleId = value.get("vehicleId").asInt();
@@ -47,10 +51,35 @@ public class FlinkLogisticsAppSimulation {
 
                 return new ArrivalDTO(vehicleId, locationId, location, timestamp);
             }
-        }).assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<ArrivalDTO>(Time.hours(8)) {
+        }).assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<ArrivalDTO>(Time.hours(6)) {
             @Override
             public long extractTimestamp(ArrivalDTO element) {
                 return element.getTimestamp();
+            }
+        });
+
+        SourceFunction<ObjectNode> visitsSource =
+                new FlinkKafkaConsumer010<>(
+                        "visits",
+                        new JsonNodeDeserializationSchema(),
+                        properties
+                );
+
+        DataStream<VisitDTO> visitsStream = env.addSource(visitsSource).map(new MapFunction<ObjectNode, VisitDTO>() {
+            @Override
+            public VisitDTO map(ObjectNode value) throws Exception {
+                Integer vehicleId = value.get("vehicleId").asInt();
+                Integer locationId = value.get("locationId").asInt();
+                String location = value.get("location").asText();
+                Long arrivalTimestamp = value.get("arrivalTimestamp").asLong();
+                Long departureTimestamp = value.get("departureTimestamp").asLong();
+
+                return new VisitDTO(vehicleId, locationId, location, arrivalTimestamp, departureTimestamp);
+            }
+        }).assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<VisitDTO>(Time.hours(4)) {
+            @Override
+            public long extractTimestamp(VisitDTO element) {
+                return element.getArrivalTimestamp();
             }
         });
 
@@ -70,8 +99,21 @@ public class FlinkLogisticsAppSimulation {
                     }
                 });
 
-        arrivalsStream.addSink(new PrintSinkFunction());
+        DataStream<AvgVisitDuration> avgVisitDurationsStream = visitsStream
+                .filter(new FilterFunction<VisitDTO>() {
+                    @Override
+                    public boolean filter(VisitDTO value) throws Exception {
+                        return value.getLocationId() != 0;
+                    }
+                })
+                .keyBy(visit -> visit.getLocationId())
+                .timeWindow(Time.hours(1))
+                .aggregate(new AvgVisitAggregateFunction());
+
+//        arrivalsStream.addSink(new PrintSinkFunction());
+//        visitsStream.addSink(new PrintSinkFunction());
         countsStream.addSink(new PrintSinkFunction());
+        avgVisitDurationsStream.addSink(new PrintSinkFunction<>());
 
         env.execute("Flink Streaming Java API Skeleton");
 

@@ -1,4 +1,4 @@
-package micc.ase.logistics.cloud.stream.dto;
+package micc.ase.logistics.cloud.stream.event;
 
 import java.io.Serializable;
 import java.text.DateFormat;
