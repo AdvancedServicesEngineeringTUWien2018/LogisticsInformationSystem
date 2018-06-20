@@ -53,8 +53,6 @@ public class EdgentEdgeDevice {
      */
     public void start(SimulationGPSSensor sensor, Tour tour) throws Exception {
 
-        System.out.println("start edge device!!!");
-
         DirectProvider provider = new DirectProvider();
         Topology topology = provider.newTopology();
 
@@ -293,7 +291,6 @@ public class EdgentEdgeDevice {
 
         provider.submit(topology);
 
-        System.out.println("edge device started");
     }
 
 }

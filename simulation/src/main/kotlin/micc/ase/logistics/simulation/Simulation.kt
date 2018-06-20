@@ -265,10 +265,12 @@ class Simulation {
             }
 
 
+            System.out.print("starting edge devices... ")
             scheduledVehicles.forEach { vehicle ->
                 val device = EdgentEdgeDevice()
                 device.start(vehicle.sensor, vehicle.tour)
             }
+            System.out.println("all edge devices started!")
 
 
 //            println("scheduled vehicles: ${scheduledVehicles.size}:\n- ${scheduledVehicles.joinToString("\n- ") {
