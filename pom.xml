@@ -14,8 +14,8 @@
         <module>common</module>
         <module>simulation</module>
         <module>edge-stream-processing</module>
-        <!--
         <module>cloud-stream-processing</module>
+        <!--
         <module>cloud-batch-processing</module>
         <module>waiting-time-predictor</module>
         <module>batch-waiting-time-predictor</module>

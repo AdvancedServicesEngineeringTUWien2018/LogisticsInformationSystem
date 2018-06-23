@@ -2,14 +2,18 @@ package micc.ase.logistics.cloud.stream.event;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 public class AvgVisitDuration {
 
     private Integer locationId;
     private String location;
-    private Long arrivingHour;
+    private Integer arrivingHour;
     private String arrivingHourLocalDateString;
+    private LocalDateTime arrivingHourTimestamp;
     private Long visitDuration;
 
     private static final DateFormat DF_from = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -18,14 +22,19 @@ public class AvgVisitDuration {
     public AvgVisitDuration() {
     }
 
-    public AvgVisitDuration(Integer locationId, String location, Long visitDuration, Long arrivingHour) {
+    public AvgVisitDuration(Integer locationId, String location, Long visitDuration, Long arrivingHourTimestamp) {
         this.locationId = locationId;
         this.location = location;
         this.visitDuration = visitDuration;
-        this.arrivingHour = arrivingHour;
         this.arrivingHourLocalDateString
-                = DF_from.format(new Date(arrivingHour)) + " - "
-                + DF_until.format(new Date(arrivingHour + 60 * 60 * 1000));
+                = DF_from.format(new Date(arrivingHourTimestamp)) + " - "
+                + DF_until.format(new Date(arrivingHourTimestamp + 60 * 60 * 1000));
+
+        this.arrivingHourTimestamp = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(arrivingHourTimestamp),
+                ZoneId.systemDefault());
+
+        this.arrivingHour = this.arrivingHourTimestamp.getHour();
     }
 
     public Integer getLocationId() {
@@ -52,11 +61,27 @@ public class AvgVisitDuration {
         this.visitDuration = visitDuration;
     }
 
-    public Long getArrivingHour() {
+    public LocalDateTime getArrivingHourTimestamp() {
+        return arrivingHourTimestamp;
+    }
+
+    public void setArrivingHourTimestamp(LocalDateTime arrivingHourTimestamp) {
+        this.arrivingHourTimestamp = arrivingHourTimestamp;
+    }
+
+    public String getArrivingHourLocalDateString() {
+        return arrivingHourLocalDateString;
+    }
+
+    public void setArrivingHourLocalDateString(String arrivingHourLocalDateString) {
+        this.arrivingHourLocalDateString = arrivingHourLocalDateString;
+    }
+
+    public Integer getArrivingHour() {
         return arrivingHour;
     }
 
-    public void setArrivingHour(Long arrivingHour) {
+    public void setArrivingHour(Integer arrivingHour) {
         this.arrivingHour = arrivingHour;
     }
 

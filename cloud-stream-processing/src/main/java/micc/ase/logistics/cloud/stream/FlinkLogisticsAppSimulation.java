@@ -4,6 +4,7 @@ import micc.ase.logistics.cloud.stream.aggregate.AvgVisitAggregateFunction;
 import micc.ase.logistics.cloud.stream.event.ArrivalDTO;
 import micc.ase.logistics.cloud.stream.event.AvgVisitDuration;
 import micc.ase.logistics.cloud.stream.event.VisitDTO;
+import micc.ase.logistics.cloud.stream.sink.BigQuerySink;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
@@ -113,9 +114,10 @@ public class FlinkLogisticsAppSimulation {
 //        arrivalsStream.addSink(new PrintSinkFunction());
 //        visitsStream.addSink(new PrintSinkFunction());
         countsStream.addSink(new PrintSinkFunction());
-        avgVisitDurationsStream.addSink(new PrintSinkFunction<>());
+        avgVisitDurationsStream.addSink(
+                new BigQuerySink("LogisticsInformationSystem_AUT", "AvgVisitDurations"));
 
-        env.execute("Flink Streaming Java API Skeleton");
+        env.execute("LogisticsInformationSystem_CloudStreamProcessing");
 
         LOG.info("READY to receive data");
 	}

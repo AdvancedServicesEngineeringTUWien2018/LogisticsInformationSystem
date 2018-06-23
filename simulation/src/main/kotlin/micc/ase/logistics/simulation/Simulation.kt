@@ -343,23 +343,26 @@ class Simulation {
         }   // simulateDate method
 
 
+        /*
         simulateDate(LocalDate.of(2017, Month.JANUARY, 2))
-
 
         Thread.sleep(3000L)
 
         simulateDate(LocalDate.of(2017, Month.JANUARY, 3))
+        */
 
-        /*
         var date = LocalDate.of(2017, Month.JANUARY, 1)
-        val end = LocalDate.of(2018, Month.JANUARY, 1)
+        val end = date.plusWeeks(2)
+
         while (date.isBefore(end)) {
 
             simulateDate(date)
+            Thread.sleep(1000L)
 
             date = date.plusDays(1)
         }
-        */
+
+        Thread.sleep(3000L)
 
 
     }
