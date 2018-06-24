@@ -37,6 +37,7 @@
     <maven.version>3.3.1</maven.version>
     <kotlin.version>1.2.50</kotlin.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+    <bigquery.client.version>1.31.0</bigquery.client.version>
     <main.class>micc.ase.logistics.simulation.MainKt</main.class>
   </properties>
 
@@ -60,6 +61,13 @@
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>4.12</version>
+      </dependency>
+
+      <!-- holiday retriever -->
+      <dependency>
+          <groupId>com.google.cloud</groupId>
+          <artifactId>google-cloud-bigquery</artifactId>
+          <version>${bigquery.client.version}</version>
       </dependency>
   </dependencies>
 

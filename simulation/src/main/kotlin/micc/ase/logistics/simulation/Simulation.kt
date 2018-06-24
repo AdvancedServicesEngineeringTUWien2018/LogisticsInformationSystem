@@ -3,6 +3,8 @@ package micc.ase.logistics.simulation
 import micc.ase.logistics.common.model.*
 import micc.ase.logistics.common.sensor.GPSSensor
 import micc.ase.logistics.edge.EdgentEdgeDevice
+import micc.ase.logistics.simulation.learn.DateInfo
+import micc.ase.logistics.simulation.learn.HolidayRetriever
 import micc.ase.logistics.simulation.model.DemandDistribution
 import micc.ase.logistics.simulation.model.live.LiveCustomer
 import micc.ase.logistics.simulation.model.SimulatedCustomer
@@ -16,9 +18,13 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Month
 import java.time.format.DateTimeFormatter
+import java.time.temporal.WeekFields
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
+import java.util.Locale
+
+
 
 class Simulation {
 
@@ -50,7 +56,7 @@ class Simulation {
     /**
      * @param kafkaEndpoint <IP>:<port>
      */
-    fun simulate(from: LocalDate, to: LocalDate, kafkaEndpoint: String = "localhost:9092") {
+    fun simulate(from: LocalDate, to: LocalDate, kafkaEndpoint: String = "localhost:9092", dryRun: Boolean = false) {
 
         if (from.isBefore(LocalDate.of(2015, Month.JANUARY, 1))) {
             throw IllegalArgumentException("from must be >= 1.1.2015")
@@ -90,32 +96,15 @@ class Simulation {
         val allCustomers = setOf(obiKrems, bellafloraKrems, lagerhausTulln, obiTulln, fetterStockerau, obiStockerau, lagerhausHollabrunn, fetterHollabrunn, lagerhausMistelbach, lagerhausLaa, lagerhausEggenburg, lagerhausHorn, obiNeusiedl, lagerhausMattersburg, lagerhausEisenstadt, obiBaden, lagerhausSchwechat, lagerhausGerasdorf, obiHadikgasse, obiTriesterstrasse, obiVoesendorf, obiStMarx, obiKlosterneuburg)
 
 
-        // from https://www.feiertage-oesterreich.at/2018/
-        val neujahr2018 = Holiday("Neujahr", LocalDate.of(2018, Month.JANUARY, 1))
-        val hlDreiKoenige2018 = Holiday("Heilige Drei Könige", LocalDate.of(2018, Month.JANUARY, 6))
-        val karfreitag2018 = Holiday("Karfreitag", LocalDate.of(2018, Month.MARCH, 30))
-        val ostermontag2018 = Holiday("Ostermontag", LocalDate.of(2018, Month.APRIL, 2))
-        val staatsfeiertag2018 = Holiday("Staatsfeiertag", LocalDate.of(2018, Month.MAY, 1))
-        val christiHimmelfahrt2018 = Holiday("Christi Himmelfahrt", LocalDate.of(2018, Month.MAY, 10))
-        val pfingsmontag2018 = Holiday("Pfingsmontag", LocalDate.of(2018, Month.MAY, 21))
-        val fronleichnam2018 = Holiday("Fronleichnam", LocalDate.of(2018, Month.MAY, 31))
-        val mariaHimmelfahrt2018 = Holiday("Maria Himmelfahrt", LocalDate.of(2018, Month.AUGUST, 15))
-        val nationalfeiertag2018 = Holiday("Nationalfeiertag", LocalDate.of(2018, Month.OCTOBER, 26))
-        val allerheiligen2018 = Holiday("Allerheiligen", LocalDate.of(2018, Month.NOVEMBER, 1))
-        val mariaEmpfaengnis2018 = Holiday("Maria Empfängnis", LocalDate.of(2018, Month.DECEMBER, 8))
-        val heiligerAbend2018 = Holiday("Heiliger Abend", LocalDate.of(2018, Month.DECEMBER, 24))
-        val weihnachten2018 = Holiday("Weihnachten", LocalDate.of(2018, Month.DECEMBER, 25))
-        val stefanitag2018 = Holiday("Stefanitag", LocalDate.of(2018, Month.DECEMBER, 26))
-        val silvester2018 = Holiday("Silvester", LocalDate.of(2018, Month.DECEMBER, 31))
-        val holidays: List<Holiday> = listOf(neujahr2018, hlDreiKoenige2018, karfreitag2018, ostermontag2018,
-                staatsfeiertag2018, christiHimmelfahrt2018, pfingsmontag2018, fronleichnam2018, mariaHimmelfahrt2018,
-                nationalfeiertag2018, allerheiligen2018, mariaEmpfaengnis2018, heiligerAbend2018, weihnachten2018,
-                stefanitag2018, silvester2018)
+        val holidayRetriever = HolidayRetriever()
+
+        val holidays = holidayRetriever.holidays()
+        println("holidays: $holidays")
 
         val latitudeRange = (allCustomers.map { it.latitude }.min()!!)..(allCustomers.map { it.latitude }.max()!!)
         val longitudeRange = (allCustomers.map { it.longitude }.min()!!)..(allCustomers.map { it.longitude }.max()!!)
 
-        val suppliers = (100..150).map { supplierId ->
+        val suppliers = (100..140).map { supplierId ->
 
             val depot = Depot("Supplier $supplierId depot",
                     randomDouble(latitudeRange.start, latitudeRange.endInclusive),
@@ -139,50 +128,50 @@ class Simulation {
             val checkSpeed = UncertainDouble(randomDouble(3.0, 6.0), randomDouble(1.0, 2.5))
             val deliveriesPerYear = when (unloadSlots) {
 
-                in 1..3 -> randomInt(3000,  8000)
-                else    -> randomInt(3000, 20000)
+                in 1..2 -> randomInt(1200, 3500)
+                else    -> randomInt(2800, 7200)
             }
             // demand
             val demandDistribution = {
                 val weekly = when (randomlyChoose(SeasonType.values())) {
-                    SeasonType.EVEN -> (1..52).map { 1.0 }
+                    SeasonType.EVEN -> (1..52).map { 0.0 }
                     SeasonType.SPRING -> (1..52).map { week ->
                         when (week) {
-                            in 11..17   -> 2.4
-                            in 18..21   -> 2.0
-                            in 22..23   -> 1.3
-                            else        -> 1.0
+                            in 11..17   -> 1.4
+                            in 18..21   -> 1.0
+                            in 22..23   -> 0.3
+                            else        -> 0.0
                         }
                     }
                     SeasonType.CHRISTMAS -> (1..52).map { week ->
                         when (week) {
-                            48 -> 1.8
-                            49 -> 2.2
-                            50 -> 2.5
-                            51 -> 3.0
-                            52 -> 1.2
-                            else -> 1.0
+                            48 -> 0.8
+                            49 -> 1.2
+                            50 -> 1.5
+                            51 -> 2.0
+                            52 -> 0.2
+                            else -> 0.0
                         }
 
                     }
                 }.toTypedArray()
 
                 val daily = when (randomlyChoose(BuyerHabit.values())) {
-                    BuyerHabit.WEEKDAY -> arrayOf(0.18, 0.18, 0.18, 0.18, 0.18, 0.1, 0.0)
-                    BuyerHabit.WEEKEND -> arrayOf(0.13, 0.13, 0.13, 0.13, 0.19, 0.29, 0.0)
-                    BuyerHabit.NONE    -> arrayOf(0.17, 0.16, 0.17, 0.16, 0.17, 0.17, 0.0)
+                    BuyerHabit.WEEKDAY -> arrayOf(1.0, 1.0, 1.0, 1.0, 1.0, 0.4, 0.0)
+                    BuyerHabit.WEEKEND -> arrayOf(1.0, 1.0, 1.0, 1.0, 1.3, 1.8, 0.0)
+                    BuyerHabit.NONE    -> arrayOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0)
                 }
 
                 val daysBeforeClosed = when (randomlyChoose(CloseType.values())) {
-                    CloseType.NEED_MORE_BEFORE_CLOSES   -> arrayOf(0.1, 0.3, 0.6)
+                    CloseType.NEED_MORE_BEFORE_CLOSES   -> arrayOf(0.1, 0.3, 0.6).reversedArray()
                     CloseType.NONE                      -> emptyArray()
 
                 }
 
                 val monthType = randomlyChoose(MonthType.values())
                 val (beginOfMonth, endOfMonth) = when(monthType) {
-                    MonthType.BEGIN_OF_MONTH    -> Pair(arrayOf(0.05, 0.2, 0.3, 0.45), emptyArray<Double>())
-                    MonthType.END_OF_MONTH      -> Pair(emptyArray(), arrayOf(0.05, 0.2, 0.3, 0.45))
+                    MonthType.BEGIN_OF_MONTH    -> Pair(arrayOf(0.45, 0.3, 0.2, 0.05), emptyArray<Double>())
+                    MonthType.END_OF_MONTH      -> Pair(emptyArray(), arrayOf(0.05, 0.2, 0.3, 0.45).reversedArray())
                     MonthType.NONE              -> Pair(emptyArray(), emptyArray())
                 }
                 DemandDistribution(weekly, daily, daysBeforeClosed, beginOfMonth, endOfMonth)
@@ -202,16 +191,93 @@ class Simulation {
             today
         }
 
+
         val deliveryDistribution: Map<SimulatedCustomer, Map<LocalDate, Double>> = simulatedCustomers.map { customer ->
 
-            // TODO make this more realistic
+            val demand = customer.demandDistribution
+
+            val freeDays = days2015To2017.filter { demand.dailyDemand[it.dayOfWeek.value-1] <= 0.0 }
+                    .union(holidays.map { it.date })
+
+            val firstFree = freeDays.toList().sorted().first()
+            val first = days2015To2017.first()
+
+
+            val firstSection = days2015To2017.takeWhile { it.isBefore(firstFree) }.map { it to firstFree }
+
+            val nextFreeDays = freeDays.toList().sorted().windowed(2, 1, false).flatMap {
+                val last = it[0]
+                val next = it[1]
+
+                var current = last
+                val daysBetween: MutableList<LocalDate> = LinkedList()
+
+                while (current < next) {
+                    daysBetween.add(current)
+                    current = current.plusDays(1)
+                }
+
+                daysBetween.map { it to next }
+            }.union(firstSection).toMap()
+
 
             customer to days2015To2017.map { date ->
-                date to if (date.dayOfWeek != DayOfWeek.SUNDAY) {
-                    1.0 / 365.0
-                } else {
+                val isFree = date in freeDays
+                date to if (isFree) {
                     0.0
+                } else {
+
+                    val d = DateInfo(date, nextFreeDays[date]!!, 4)
+
+                    val dayInfluence = demand.dailyDemand[d.dayOfWeek-1]
+
+                    val weekInfluence = demand.weeklyDemand[if (d.weekOfYear-1 > 51) 51 else d.weekOfYear-1]    // 53th week
+
+                    val beginOfMonthInfluence = if (d.dayOfMonth <= demand.beginOfMonth.size) {
+                        demand.beginOfMonth[d.dayOfMonth - 1]
+                    } else {
+                        0.0
+                    }
+
+                    val endOfMonthInfluence = if (d.daysBeforeEndOfMonth < demand.endOfMonth.size) {
+                        demand.endOfMonth[d.daysBeforeEndOfMonth]
+                    } else {
+                        0.0
+                    }
+
+                    val beforeClosedInfluence = if (d.nextFreeDay != null) {
+                        if (d.daysBeforeFree < demand.daysBeforeClosed.size) {
+                            demand.daysBeforeClosed[d.daysBeforeFree - 1]
+                        } else {
+                            0.0
+                        }
+                    } else {
+                        0.0
+                    }
+
+                    val result = dayInfluence + weekInfluence + beginOfMonthInfluence + endOfMonthInfluence + beforeClosedInfluence
+
+                    if (LOG.isTraceEnabled) {
+                        LOG.trace("date: ${date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))} -> result $result consists of day $dayInfluence, week $weekInfluence, begin of month $beginOfMonthInfluence, end of month $endOfMonthInfluence, before closed $beforeClosedInfluence")
+                    }
+
+                    result
                 }
+            }.toMap()
+
+        }.toMap()
+
+        val yearlyCustomerDistributionSums = simulatedCustomers.map { customer ->
+            customer to deliveryDistribution[customer]!!.entries.groupBy { it.key.year }.map { (year, entries) ->
+                year to entries.sumByDouble { it.value }
+            }.toMap()
+        }.toMap()
+
+        val normalizedDeliveryDistributions = deliveryDistribution.entries.map { (customer, values) ->
+
+            customer to values.map { (date, value) ->
+                val sum = yearlyCustomerDistributionSums[customer]!![date.year]!!
+                date to value / sum
             }.toMap()
 
         }.toMap()
@@ -220,13 +286,13 @@ class Simulation {
 
         val deliveries: Map<LocalDate, Map<SimulatedCustomer, Int>> = days2015To2017.map { date ->
             date to simulatedCustomers.map { customer ->
-                customer to (deliveryDistribution[customer]!![date]!! * customer.deliveriesPerYear * visitVariance.nextValue()).toInt()
+                customer to (normalizedDeliveryDistributions[customer]!![date]!! * customer.deliveriesPerYear * visitVariance.nextValue()).toInt()
             }.toMap()
         }.toMap()
 
 
+        val tourLength = 5
 
-        val tourLength = 4
 
         fun simulateDate(date: LocalDate) {
 
@@ -282,6 +348,7 @@ class Simulation {
             }
 
 
+
             System.out.print("update tours on devices... ")
             scheduledVehicles.forEach { vehicle ->
                 vehicle.edgeDevice.changeTour(vehicle.tour)
@@ -295,7 +362,7 @@ class Simulation {
             }
 
 
-            val oneHourInXSeconds = 5
+            val oneHourInXSeconds = 4
             val gap = (oneHourInXSeconds * 1000.0 / 60.0).toLong()
             var lastTimeMillis = System.currentTimeMillis()
 
@@ -305,7 +372,7 @@ class Simulation {
 
             var minutes = 0
             // simulate 1 minute every loop iteration
-            while (GLOBAL_TIME.isBefore(date.plusDays(1).atStartOfDay())) {
+            while (GLOBAL_TIME.isBefore(date.plusDays(1).atStartOfDay().minusHours(4))) {
 
                 val now = System.currentTimeMillis()
                 val elapsedMillis = now - lastTimeMillis
@@ -351,16 +418,52 @@ class Simulation {
         }   // simulateDate method
 
 
+        fun dryRun(date: LocalDate): Pair<Int, Int> {
+            val weekday = date.dayOfWeek.value - 1      // 0..6
+            val startDatetime = date.atTime(7, 0)
+            GLOBAL_TIME = startDatetime
+
+            println("simulate ${date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}")
+
+            val todaysDeliveries = deliveries[date]!!.map { it.value }.sum()
+            val todaysDeliveriesPerCustomer = deliveries[date]!!.entries.joinToString("\n- ") { (customer, visits) ->
+                "${customer.name}: $visits"
+            }
+            val maxPerCustomer = deliveries[date]!!.maxBy { it.value }!!
+
+            println("Today's deliveries in detail: $todaysDeliveriesPerCustomer")
+
+            println("Today's deliveries: $todaysDeliveries (max: ${maxPerCustomer.key.name} ${maxPerCustomer.value})... needs at least ${todaysDeliveries / tourLength + 1} vehicles")
+
+            return Pair(maxPerCustomer.value, todaysDeliveries)
+        }
+
+
         var date = from
         val end = to
 
+        var overallMaxCustomer = 0
+        var overallMaxTotal = 0
         while (!date.isAfter(end)) {
 
-            simulateDate(date)
-            Thread.sleep(1000L)
+            if (dryRun) {
+                val (maxCustomer, total) = dryRun(date)
+                if (maxCustomer > overallMaxCustomer) {
+                    overallMaxCustomer = maxCustomer
+                }
+                if (total > overallMaxTotal) {
+                    overallMaxTotal = total
+                }
+            } else {
+                simulateDate(date)
+                Thread.sleep(1000L)
+            }
 
             date = date.plusDays(1)
         }
+
+        println("max customer: $overallMaxCustomer, max total: $overallMaxTotal")
+
 
         Thread.sleep(3000L)
 

@@ -301,11 +301,8 @@ public class EdgentEdgeDevice {
                 (Function<Visit, Integer>) value -> 0                 // partition   value.getVehicleId() % 2  ??
         );
 
-//        coordsStream.print();
-//        movementsStream.print();
-        arrivalsStream.print();
-//        departuresStream.print();
-        visitsStream.print();
+//        arrivalsStream.print();
+//        visitsStream.print();
 
         provider.submit(topology);
 
