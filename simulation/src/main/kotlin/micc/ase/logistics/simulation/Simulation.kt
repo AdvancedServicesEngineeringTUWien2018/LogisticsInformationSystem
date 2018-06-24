@@ -10,15 +10,19 @@ import micc.ase.logistics.simulation.model.SimulatedSupplier
 import micc.ase.logistics.simulation.model.live.LiveVehicle
 import micc.ase.logistics.simulation.model.live.VehicleStatus
 import micc.ase.logistics.simulation.util.*
+import org.slf4j.LoggerFactory
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Month
 import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 class Simulation {
+
+    val LOG = LoggerFactory.getLogger(Simulation::class.java)
 
     enum class SeasonType {
         EVEN,
@@ -43,7 +47,21 @@ class Simulation {
         END_OF_MONTH
     }
 
-    fun simulate() {
+    /**
+     * @param kafkaEndpoint <IP>:<port>
+     */
+    fun simulate(from: LocalDate, to: LocalDate, kafkaEndpoint: String = "localhost:9092") {
+
+        if (from.isBefore(LocalDate.of(2015, Month.JANUARY, 1))) {
+            throw IllegalArgumentException("from must be >= 1.1.2015")
+        }
+
+        if (to.isAfter(LocalDate.of(2018, Month.JANUARY, 1).minusDays(1))) {
+            throw IllegalArgumentException("to must be < 1.1.2018")
+        }
+
+
+        LOG.info("Use kafka endpoint $kafkaEndpoint")
 
         val obiKrems = Customer(1, "OBI Krems", 48.406988, 15.654453)
         val bellafloraKrems = Customer(2, "Bellaflora Krems", 48.407813, 15.660239)
@@ -105,7 +123,7 @@ class Simulation {
             val unloadDuration = UncertainDouble(randomDouble(6.0..14.0), randomDouble(2.0..4.0))
             val vehicleCount = randomInt(1,5)
 
-            SimulatedSupplier(supplierId, depot, unloadDuration, vehicleCount)
+            SimulatedSupplier(supplierId, depot, unloadDuration, vehicleCount, kafkaEndpoint)
         }
 
         System.out.print("starting edge devices... ")
@@ -118,7 +136,7 @@ class Simulation {
 
             // assume one person at the customer location to check goods
             val unloadSlots = randomInt(1, 5)
-            val checkSpeed = UncertainDouble(randomDouble(4.0, 8.0), randomDouble(1.0, 3.0))
+            val checkSpeed = UncertainDouble(randomDouble(3.0, 6.0), randomDouble(1.0, 2.5))
             val deliveriesPerYear = when (unloadSlots) {
 
                 in 1..3 -> randomInt(3000,  8000)
@@ -130,9 +148,9 @@ class Simulation {
                     SeasonType.EVEN -> (1..52).map { 1.0 }
                     SeasonType.SPRING -> (1..52).map { week ->
                         when (week) {
-                            in 11..17   -> 3.0
-                            in 18..21   -> 3.0
-                            in 22..23   -> 3.0
+                            in 11..17   -> 2.4
+                            in 18..21   -> 2.0
+                            in 22..23   -> 1.3
                             else        -> 1.0
                         }
                     }
@@ -178,8 +196,8 @@ class Simulation {
             println(customer)
         }
 
-        val firstDate = LocalDate.of(2017, Month.JANUARY, 1)
-        val year2017: List<LocalDate> = (0..365L).map { day ->
+        val firstDate = LocalDate.of(2015, Month.JANUARY, 1)
+        val days2015To2017: List<LocalDate> = (0..(365*3L)).map { day ->
             val today = firstDate.plusDays(day)
             today
         }
@@ -188,7 +206,7 @@ class Simulation {
 
             // TODO make this more realistic
 
-            customer to year2017.map { date ->
+            customer to days2015To2017.map { date ->
                 date to if (date.dayOfWeek != DayOfWeek.SUNDAY) {
                     1.0 / 365.0
                 } else {
@@ -200,7 +218,7 @@ class Simulation {
 
         val visitVariance = UncertainDouble(1.0, 0.15)
 
-        val deliveries: Map<LocalDate, Map<SimulatedCustomer, Int>> = year2017.map { date ->
+        val deliveries: Map<LocalDate, Map<SimulatedCustomer, Int>> = days2015To2017.map { date ->
             date to simulatedCustomers.map { customer ->
                 customer to (deliveryDistribution[customer]!![date]!! * customer.deliveriesPerYear * visitVariance.nextValue()).toInt()
             }.toMap()
@@ -308,16 +326,6 @@ class Simulation {
                 minutes++
                 GLOBAL_TIME = GLOBAL_TIME.plusMinutes(1)
 
-//                println("minutes: $minutes, now it is ${GLOBAL_TIME.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))}... remaining vehicles: ${remainingVehicles.size}... " +
-//                        "${remainingVehicles.filter { it.status == VehicleStatus.AT_HOME }.size} at home, " +
-//                        "${remainingVehicles.filter { it.status == VehicleStatus.APPROACHING_CUSTOMER }.size} approaching customer, " +
-//                        "${remainingVehicles.filter { it.status == VehicleStatus.WAITING_IN_QUEUE }.size} waiting in queue, " +
-//                        "${remainingVehicles.filter { it.status == VehicleStatus.UNLOADING }.size} unloading, " +
-//                        "${remainingVehicles.filter { it.status == VehicleStatus.WAITING_FOR_GOODS_CHECK }.size} waiting for goods check, " +
-//                        "${remainingVehicles.filter { it.status == VehicleStatus.GOODS_CHECK }.size} at goods check, " +
-//                        "${remainingVehicles.filter { it.status == VehicleStatus.ON_THE_WAY_HOME }.size} on the way home, " +
-//                        "")
-
                 scheduledVehicles.forEach { vehicle ->
                     vehicle.processMinute()
                 }
@@ -343,18 +351,10 @@ class Simulation {
         }   // simulateDate method
 
 
-        /*
-        simulateDate(LocalDate.of(2017, Month.JANUARY, 2))
+        var date = from
+        val end = to
 
-        Thread.sleep(3000L)
-
-        simulateDate(LocalDate.of(2017, Month.JANUARY, 3))
-        */
-
-        var date = LocalDate.of(2017, Month.JANUARY, 1)
-        val end = date.plusWeeks(2)
-
-        while (date.isBefore(end)) {
+        while (!date.isAfter(end)) {
 
             simulateDate(date)
             Thread.sleep(1000L)

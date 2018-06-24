@@ -1,12 +1,16 @@
 package micc.ase.logistics.cloud.stream.sink;
 
+import com.google.auth.oauth2.ComputeEngineCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.bigquery.*;
+import com.google.common.collect.Lists;
 import micc.ase.logistics.cloud.stream.event.AvgVisitDuration;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -24,19 +28,41 @@ public class BigQuerySink extends RichSinkFunction<AvgVisitDuration> {
     private TableId tableId;
     private String tableName;
     private String datasetName;
+    private String credentialsJsonPath;
+    private boolean onGoogleCloud;
 
     public BigQuerySink(String datasetName, String tableName) {
+        this(null, false, datasetName, tableName);
+    }
+
+    public BigQuerySink(String credentialsJsonPath, boolean onGoogleCloud, String datasetName, String tableName) {
         super();
 
         this.datasetName = datasetName;
         this.tableName = tableName;
+        this.credentialsJsonPath = credentialsJsonPath;
+        this.onGoogleCloud = onGoogleCloud;
     }
 
     @Override
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
 
-        this.bigquery = BigQueryOptions.getDefaultInstance().getService();
+        if (credentialsJsonPath == null) {
+            this.bigquery = BigQueryOptions.getDefaultInstance().getService();
+        } else {
+            GoogleCredentials credentials;
+
+            if (onGoogleCloud) {
+                credentials = ComputeEngineCredentials.create();
+            } else {
+                credentials = GoogleCredentials.fromStream(new FileInputStream(credentialsJsonPath))
+                        .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/cloud-platform"));
+            }
+
+            this.bigquery = BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
+        }
+
         this.tableId = TableId.of(datasetName, tableName);
     }
 

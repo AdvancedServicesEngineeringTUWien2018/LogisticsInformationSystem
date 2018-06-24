@@ -50,9 +50,15 @@ public class EdgentEdgeDevice {
 
     private Tour tour = Tour.empty;
     private SimulationGPSSensor sensor = null;
+    private String kafkaEndpoint;
 
     public EdgentEdgeDevice(SimulationGPSSensor sensor) {
+        this("localhost:9092", sensor);
+    }
+
+    public EdgentEdgeDevice(String kafkaEndpoint, SimulationGPSSensor sensor) {
         this.sensor = sensor;
+        this.kafkaEndpoint = kafkaEndpoint;
     }
 
     /**
@@ -277,8 +283,7 @@ public class EdgentEdgeDevice {
 
 
         Map<String, Object> config = new HashMap<>();
-        config.put("bootstrap.servers", "localhost:9092");
-//        config.put("zookeeper.connect", "localhost:2181");
+        config.put("bootstrap.servers", kafkaEndpoint);
 
         KafkaProducer producer = new KafkaProducer(topology, () -> config);
 

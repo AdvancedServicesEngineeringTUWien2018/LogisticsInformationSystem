@@ -21,19 +21,102 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class FlinkLogisticsAppSimulation {
 
-    private static Logger LOG = LoggerFactory.getLogger(FlinkLogisticsAppSimulation.class);
+    private final static Logger LOG = LoggerFactory.getLogger(FlinkLogisticsAppSimulation.class);
 
 	public static void main(String[] args) throws Exception {
 
-		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+	    boolean remoteExecution = false;
+        boolean onGoogleCloud = false;
+
+	    String flinkHost;
+        int flinkPort;
+	    String kafkaEndpoint;
+	    String libFolder;
+	    int parallelism;
+	    String credentialsJsonPath = null;
+	    if (args.length >= 1) {
+            kafkaEndpoint = args[0];
+        } else {
+	        kafkaEndpoint = "localhost:9092";
+        }
+
+        if (args.length >= 2 && args[1].equals("google")) {
+            onGoogleCloud = true;
+        }
+
+        if (args.length >= 5) {
+	        remoteExecution = true;
+	        flinkHost = args[1];
+            flinkPort = Integer.parseInt(args[2]);
+            libFolder = args[3];
+            parallelism = Integer.parseInt(args[4]);
+        } else {
+	        if (args.length == 2 && args[1].equals("remote")) {
+	            remoteExecution = true;
+            }
+	        flinkHost = "localhost";
+	        flinkPort = 6123;
+	        libFolder = "lib/";
+	        parallelism = 1;
+        }
+        if (args.length == 6) {
+            credentialsJsonPath = args[5];
+        }
+
+		final StreamExecutionEnvironment env;
+	    if (remoteExecution) {
+            File[] files = new File(libFolder).listFiles();
+            List<String> libs = new ArrayList<>();
+            List<String> include = new ArrayList<>();
+            Double mb = 0.0;
+            include.add("google-api-client-1.23.0.jar");
+            include.add("google-api-services-bigquery-v2-rev383-1.23.0.jar");
+            include.add("google-auth-library-credentials-0.9.1.jar");
+            include.add("google-auth-library-oauth2-http-0.9.1.jar");
+            include.add("google-cloud-bigquery-1.31.0.jar");
+            include.add("google-cloud-core-1.31.0.jar");
+            include.add("google-cloud-core-http-1.31.0.jar");
+            include.add("google-http-client-1.23.0.jar");
+            include.add("google-http-client-appengine-1.23.0.jar");
+            include.add("google-http-client-jackson-1.23.0.jar");
+            include.add("google-http-client-jackson2-1.23.0.jar");
+            include.add("google-oauth-client-1.23.0.jar");
+            include.add("proto-google-common-protos-1.11.0.jar");
+            include.add("proto-google-iam-v1-0.12.0.jar");
+            include.add("flink-connector-kafka-0.9_2.11-1.5.0.jar");
+            include.add("flink-connector-kafka-0.10_2.11-1.5.0.jar");
+            include.add("flink-connector-kafka-base_2.11-1.5.0.jar");
+            include.add("kafka-clients-0.10.2.1.jar");
+            include.add("lz4-1.3.0.jar");
+            for (File file : files) {
+                if(include.contains(file.getName())) {
+                    mb += (file.length() / 1024.0) / 1024.0;
+                    libs.add(file.getPath());
+                }
+            }
+            String jobJar = "cloudStreamProcessingJob.jar";
+            libs.add(jobJar);
+            mb += ((new File(jobJar)).length() / 1024.0) / 1024.0;
+
+            LOG.info("Uploading Stream Execution Environment with {} jars ({} MB)", libs.size(), mb);
+            long startTime = System.currentTimeMillis();
+            env = StreamExecutionEnvironment
+                    .createRemoteEnvironment(flinkHost, flinkPort, parallelism, libs.toArray(new String[0]));
+            LOG.info("Upload complete in {}ms.", System.currentTimeMillis() - startTime);
+        } else {
+            env = StreamExecutionEnvironment.getExecutionEnvironment();
+        }
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "localhost:9092");
+        properties.setProperty("bootstrap.servers", kafkaEndpoint);
         properties.setProperty("group.id", "");
         SourceFunction<ObjectNode> arrivalsSource =
                 new FlinkKafkaConsumer010<>(
@@ -111,11 +194,8 @@ public class FlinkLogisticsAppSimulation {
                 .timeWindow(Time.hours(1))
                 .aggregate(new AvgVisitAggregateFunction());
 
-//        arrivalsStream.addSink(new PrintSinkFunction());
-//        visitsStream.addSink(new PrintSinkFunction());
         countsStream.addSink(new PrintSinkFunction());
-        avgVisitDurationsStream.addSink(
-                new BigQuerySink("LogisticsInformationSystem_AUT", "AvgVisitDurations"));
+        avgVisitDurationsStream.addSink(new BigQuerySink(credentialsJsonPath, onGoogleCloud, "LogisticsInformationSystem_AUT", "AvgVisitDurations"));
 
         env.execute("LogisticsInformationSystem_CloudStreamProcessing");
 

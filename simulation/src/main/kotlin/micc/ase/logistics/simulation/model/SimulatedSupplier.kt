@@ -13,7 +13,8 @@ class SimulatedSupplier(
         val depot: Depot,
         val unloadDuration: UncertainDouble,
         /** 1 <= vehicles < 100 */
-        val vehicles: Int
+        val vehicles: Int,
+        kafkaEndpoint: String
 ) {
 
     val sensors: List<SimulationGPSSensor>
@@ -25,7 +26,7 @@ class SimulatedSupplier(
         }
 
         sensors = (1..vehicles).map { SimulationGPSSensor() }
-        edgeDevices = (1..vehicles).map { v -> EdgentEdgeDevice(sensors[v - 1]) }
+        edgeDevices = (1..vehicles).map { v -> EdgentEdgeDevice(kafkaEndpoint, sensors[v - 1]) }
     }
 
     /**

@@ -37,6 +37,7 @@
     <maven.version>3.3.1</maven.version>
     <kotlin.version>1.2.50</kotlin.version>
     <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+    <main.class>micc.ase.logistics.simulation.MainKt</main.class>
   </properties>
 
   <dependencies>
@@ -131,6 +132,29 @@
                       <id>java-test-compile</id>
                       <phase>test-compile</phase>
                       <goals> <goal>testCompile</goal> </goals>
+                  </execution>
+              </executions>
+          </plugin>
+
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-assembly-plugin</artifactId>
+              <version>2.6</version>
+              <executions>
+                  <execution>
+                      <id>make-assembly</id>
+                      <phase>package</phase>
+                      <goals> <goal>single</goal> </goals>
+                      <configuration>
+                          <archive>
+                              <manifest>
+                                  <mainClass>${main.class}</mainClass>
+                              </manifest>
+                          </archive>
+                          <descriptorRefs>
+                              <descriptorRef>jar-with-dependencies</descriptorRef>
+                          </descriptorRefs>
+                      </configuration>
                   </execution>
               </executions>
           </plugin>
