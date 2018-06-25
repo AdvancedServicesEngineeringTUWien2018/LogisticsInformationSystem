@@ -1,6 +1,20 @@
+
+Mini Project - Logistics Information System
+============
+
 This is a prototype for a university project in Advanced Services Engineering. It is in the field of transport and logistics.
 
-The idea is to gather GPS data from vehicles that visit customers on their daily tour, and transform and enrich this data into information to reason about how long it is expected that a deliverer needs to wait at the customer location at a specific time and day. The problem of long waiting times exists, amongst others because there are many suppliers that deliver to the same customers and nobody of them knows when the other is arriving.
+Scenario
+--------
+
+The idea is to gather GPS data from vehicles that visit customers on their daily tour, and transform and enrich this data into information to reason about how long it is expected that a deliverer needs to wait at the customer location at a specific time and day. The problem of long waiting times exists, amongst others because there are many suppliers that deliver to the same customers and nobody of them knows when the other is arriving. 
+
+With our logistics information system we want to improve this situation and consider historic and real-time data that is gathered by the system itself. However, for the mini project, we will only consider historic data... and in a rather simple manner.
+
+See the [Mini Project Proposal PDF](mini-project-proposal.pdf) for more information on the whole concept/idea.
+
+Architecture overview
+---------------------
 
 The mini project is split into 5 modules:
 - Common
@@ -8,11 +22,6 @@ The mini project is split into 5 modules:
 - Edge Stream Processing
 - Cloud Stream Processing
 - Simple Waiting Time Predictor
-
-Homework:
-1. Add a more complex machine learning based waiting time predictor based on the data stored in BigQuery!
-2. Make a gateway microservice for the predictor services and let the client choose which service they want to use
-3. Migrate the waiting time predictors as Microservices on Kubernetes and let them scale automatically
 
 ### Common
 The common module provides common classes like models, events, calculations and service request/response that might be interesting to multiple modules or components.
@@ -29,6 +38,12 @@ The cloud stream processing module is implemented with Apache Flink. It reads th
 
 ### Simple Waiting Time Predictor
 The simple waiting time predictor module is a RESTful web service which queries Google BigQuery and makes a simple average over the `AvgVisitDuration`s for every customer location at every weekday and arriving hour. It only runs locally.
+
+
+**Homework to the reader**:
+1. Add a machine learning based waiting time predictor, which makes use of the data stored in BigQuery!
+2. Make a gateway Microservice for the predictor services and let the client choose which service they want to use
+3. Migrate the waiting time predictors as Microservices on Kubernetes and let them scale automatically
 
 
 How to setup
@@ -52,7 +67,7 @@ Execute in the bash:
 ```
 gcloud container clusters get-credentials <CLUSTER_ID> --zone <ZONE> --project <PROJECT_ID>
 ```
-the exact command can be copied when selecting the Kubernetes cluster and press the `Connect` or `Verbinden` button.
+The exact command can be copied when selecting the Kubernetes cluster and press the `Connect` (or `Verbinden`) button.
 
 Now `kubectl` should be configured to work with your Kubernetes cluster on the Google Cloud Platform. 
 
@@ -76,7 +91,7 @@ kubectl create -f kafka-cluster.yaml
 
 ### Deploy Flink on Kubernetes
 
-```
+``` bash
 cd kubernetes/flink
 kubectl create -f jobmanager-loadBalancer.yaml
 kubectl create -f jobmanager-service.yaml
@@ -84,7 +99,7 @@ kubectl create -f jobmanager-service.yaml
 
 Extract external Flink loadbalancer IP with `kubectl get services` and adapt the `JOB_MANAGER_RPC_ADDRESS` property in `jobmanager-deployment.yaml` and `taskmanager-deployment.yaml` accordingly.
 
-```
+``` bash
 kubectl create -f jobmanager-deployment.yaml
 kubectl create -f taskmanager-deployment.yaml
 ```
@@ -95,7 +110,7 @@ kubectl create -f taskmanager-deployment.yaml
 ### Setup BigQuery
 
 #### Create credentials and grant access
-Go to the [Google Cloud Platform Service Accounts page](https://console.cloud.google.com/iam-admin/serviceaccounts) and create a new service account with the `bigquery.dataEditor` role and download the private key in JSON format. Put it on a save place (don't loose it, don't leak it!) and set the environment variable `GOOGLE_CLOUD_CREDENTIALS` to the absolute path of the JSON file, i.e. `export GOOGLE_CLOUD_CREDENTIALS=<PATH_TO_JSON>` or configure it in your IDE if you run your application from there.
+Go to the [Google Cloud Platform Service Accounts page](https://console.cloud.google.com/iam-admin/serviceaccounts) and create a new service account with the `bigquery.dataEditor` role and download the private key in JSON format. Put it on a save place (don't loose it, don't leak it!) and set the environment variable `GOOGLE_APPLICATION_CREDENTIALS` to the absolute path of the JSON file, i.e. `export GOOGLE_APPLICATION_CREDENTIALS=<PATH_TO_JSON>` or configure it in your IDE if you run your application from there.
 
 #### Create dataset for your country
 Go to [BigQuery](https://bigquery.cloud.google.com/) and create a new dataset near to the zone your Kubernetes cluster runs. In our case, name it `LogisticsInformationSystem_AUT` in order to run the example out-of-the-box.
@@ -125,7 +140,7 @@ All tables that are created in a dataset are automatically located in the same d
   - `arrivalHourLocalString` of type `STRING`
   - `avgVisitDuration` of type `INTEGER`
 - Chose `Partitioning Type` of `None`
-  - Reason: Performance-wise this would be reasonable. However, it restricts the value range the chosen partitioning field of new data times are allowed to have. In our case, it would not be possible to ingest data from simulating years 2015 to 2017.
+  - Reason: Performance-wise this would be reasonable to partition the table by day (`arrivalHourTimestamp`). However, it restricts the value range the chosen partitioning field of new data times are allowed to have. In our case, it would not be possible to ingest data from our simulation of the years 2015 to 2017.
 
 
 How to run
@@ -140,9 +155,9 @@ Retrieve the external IP address of `Kafka` and `Flink` via `kubectl get service
 With `<EXTERNAL_FLINK_IP>:8081` you can access the Flink GUI. Go to `Submit new Job` and upload the streaming job from `cloud-stream-processing/target/cloudStreamProcessingJob.jar`. Submit it with program arguments `<EXTERNAL_KAFKA_IP>:9092`.
 
 
-Start the simulation with 
-```
-java -jar simulation/target/simulation-0.0.1-SNAPSHOT-jar-with-dependencies.jar <START_DATE> <END_DATE> <KAFKA_EXTERNAL_IP>:9092
+Start the simulation with:
+``` bash
+java -jar simulation/target/simulation-jar-with-dependencies.jar <START_DATE> <END_DATE> <KAFKA_EXTERNAL_IP>:9092
 ```
 
 Start date and end date must be between `2015-01-01` and `2017-12-31` and the date format is `yyyy-MM-dd`.
@@ -150,18 +165,19 @@ Start date and end date must be between `2015-01-01` and `2017-12-31` and the da
 
 ### Predict waiting time
 
-```
-cd batch-waiting-time-predictor
+Start the Spring Boot based RESTful webservice with:
+``` bash
+cd simple-waiting-time-predictor
 ./mvnw clean spring-boot:run
 ```
 
 Test it by using a REST client (like the [Advanced REST Client](https://chrome.google.com/webstore/detail/advanced-rest-client/hgmloofddffdnphfgcellkdfbfbjeloo?hl=de) extension of [Google Chrome](https://www.google.com/chrome/)):
-```
+``` HTTP
 GET http://localhost:8080/predict?locationId=10&date=2018-06-22&arrivalHour=11
 ```
 All request params are required:
 - `locationId`: int (look up location ID in [BigQuery](https://bigquery.cloud.google.com/) or in the [source code](simulation/src/main/kotlin/micc/ase/logistics/simulation/Simulation.kt))
-- `date`: format `yyyy-MM-dd`, 2015-01-01..2017-12-31
+- `date`: 2015-01-01..2017-12-31 (format `yyyy-MM-dd`)
 - `arrivalHour`: 0..23
 
 
@@ -172,7 +188,7 @@ Just `Ctrl+C` the simulation or the waiting time predictor.
 
 
 A Kubernetes resource (`Kafka`, `Flink`) can be deleted with the following command:
-```
+``` bash
 kubectl delete -f <CONFIG.yaml>
 ```
 
