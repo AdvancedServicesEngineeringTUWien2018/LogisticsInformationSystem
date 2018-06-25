@@ -7,7 +7,7 @@ This is a prototype for a university project in Advanced Services Engineering. I
 Scenario
 --------
 
-The idea is to gather GPS data from vehicles that visit customers on their daily tour, and transform and enrich this data into information to reason about how long it is expected that a deliverer needs to wait at the customer location at a specific time and day. The problem of long waiting times exists, amongst others because there are many suppliers that deliver to the same customers and nobody of them knows when the other is arriving. 
+The idea is to gather GPS data from vehicles that visit customers on their daily tour, and transform and enrich this data into information to reason about how long it is expected that a deliverer needs to wait at the customer location at a specific time and day. The problem of long waiting times exists, amongst others because there are many suppliers that deliver to the same customers and nobody of them knows when the other suppliers arrive. 
 
 With our logistics information system we want to improve this situation and consider historic and real-time data that is gathered by the system itself. However, for the mini project, we will only consider historic data... and in a rather simple manner.
 
@@ -27,23 +27,23 @@ The mini project is split into 5 modules:
 The common module provides common classes like models, events, calculations and service request/response that might be interesting to multiple modules or components.
 
 ### Simulation
-The simulation module tries to mimic the real mechanisms of a vehicle queue at a customer location, all waiting to get a slot to unload their goods and then get the goods checked by the goods takeover person. The simulation takes quality of simulation data serious, in a sense, that a machine learning predictor can detect patterns and more accurately predict the expected waiting time. It takes Austrian holidays from 2015 to 2018 into account and supports different customer demand behaviours like varying demand on different weekdays, on number of week (e.g. Christmas time?), begin of month (e.g. people got their salary and burn it at the next party?), before closed days (e.g. food?), end of month (e.g. some other good reason?) that would affect the waiting time on different days.
+The simulation module tries to mimic the real mechanisms of a vehicle queue at a customer location, all waiting to get a slot to unload their goods and then get the goods checked by the goods takeover person. The simulation takes quality of simulation data serious, in a sense, that a machine learning predictor can detect patterns and more accurately predict the expected waiting time. It takes Austrian `holidays` from 2015 to 2018 into account and supports different `customer demands` like varying demand on different `weekdays`, on `number of week` (e.g. Christmas time?), `begin of month` (e.g. people got their salary and burn it at the next party?), `before closed days` (e.g. food?), `end of month` (e.g. people who need to spend their monthly budget on something - or some other more realistic reason) that would affect the waiting time on different days.
 
 ### Edge Stream Processing
-The edge stream processing module contains a stream processing application written with the edge device stream processing framework Apache Edgent, which is currently in the Apache Incubator phase. An instance of such an `EdgentEdgeDevice` basically receives GPS data from a sensor (in the real world: from the vehicle driver's Smartphone), detects Arrivals and Departures at a vehicles destinations based on their daily tour, and sends only the visit information further to the cloud (in our case, to a Kafka instance). With this, the privacy of the vehicle driver can be increased, the network capacity can be saved and network connection problems can be handled without much notice.
+The edge stream processing module contains a stream processing application written with the edge device stream processing framework [Apache Edgent](http://edgent.apache.org/), which is currently in the Apache Incubator phase. An instance of such an `EdgentEdgeDevice` basically receives GPS data from a sensor (in the real world: from the vehicle driver's Smartphone), detects Arrivals and Departures at the vehicles destinations based on their daily tour, and sends only the visit information further to the cloud (in our case, to an [Apache Kafka](https://kafka.apache.org/) instance). With this, the *privacy* of the vehicle driver can be increased, the *network capacity* can be saved and *network connection* problems can be handled without much notice.
 
 ### Cloud Stream Processing
-The cloud stream processing module is implemented with Apache Flink. It reads the data (visit information of each vehicle visit at a tour destination) from Apache Kafka, and handles possibly delayed or out-of-order events and aggregate them to hourly average waiting time at each customer location. This `AvgVisitDuration` data stream is then ingested into Google BigQuery.
+The cloud stream processing module is implemented with [Apache Flink](https://flink.apache.org/). It reads the data (visit information of each vehicle visit at a tour destination) from Apache Kafka, handles possibly delayed or out-of-order events and aggregate them to hourly average waiting time at each customer location. This `AvgVisitDuration` data stream is then ingested into [Google BigQuery](https://cloud.google.com/bigquery/).
 
 
 ### Simple Waiting Time Predictor
-The simple waiting time predictor module is a RESTful web service which queries Google BigQuery and makes a simple average over the `AvgVisitDuration`s for every customer location at every weekday and arriving hour. It only runs locally.
+The simple waiting time predictor module is a RESTful web service based on [Spring Boot](https://spring.io/projects/spring-boot) which queries Google BigQuery and makes a simple average over the `AvgVisitDuration`s for every customer location at every weekday and arriving hour. It only runs locally, not on a Kubernetes cluster.
 
 
 **Homework to the reader**:
 1. Add a machine learning based waiting time predictor, which makes use of the data stored in BigQuery!
 2. Make a gateway Microservice for the predictor services and let the client choose which service they want to use
-3. Migrate the waiting time predictors as Microservices on Kubernetes and let them scale automatically
+3. Migrate the waiting time predictors as Microservices on [Kubernetes](https://kubernetes.io/) and let them scale automatically
 
 
 How to setup
