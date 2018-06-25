@@ -104,7 +104,7 @@ class Simulation {
         val latitudeRange = (allCustomers.map { it.latitude }.min()!!)..(allCustomers.map { it.latitude }.max()!!)
         val longitudeRange = (allCustomers.map { it.longitude }.min()!!)..(allCustomers.map { it.longitude }.max()!!)
 
-        val suppliers = (100..140).map { supplierId ->
+        val suppliers = (100..150).map { supplierId ->
 
             val depot = Depot("Supplier $supplierId depot",
                     randomDouble(latitudeRange.start, latitudeRange.endInclusive),
@@ -322,20 +322,22 @@ class Simulation {
 
             println("Today's deliveries: $todaysDeliveries... needs at least ${todaysDeliveries / tourLength + 1} vehicles, available ${availableVehicles.size}")
 
-            fun randomlyChooseCustomers(n: Int) = randomlyChoose(n, remainingCustomerVisits.keys)
+            fun randomlyChooseCustomers(n: Int) = randomlyChoose(n, remainingCustomerVisits.keys,
+                    { customer: LiveCustomer -> remainingCustomerVisits.get(customer)!! })
 
 
             while (remainingCustomerVisits.isNotEmpty()) {
 
-                val count = Math.min(tourLength, remainingCustomerVisits.size)
+                val remainingTotal = remainingCustomerVisits.entries.sumBy { it.value }
+                val count = Math.min(tourLength, remainingTotal)
                 val destinations = randomlyChooseCustomers(count).toList().shuffled(random)
+                println("choose $count, because length=$tourLength and remaining Total is $remainingTotal, destinations: $destinations")
 
-                if (availableVehicles.isEmpty()) throw IllegalStateException("Too few vehicles available!")
+                if (availableVehicles.isEmpty()) throw IllegalStateException("Too few vehicles available! $remainingTotal destinations to go, no vehicle left!")
                 val chosenVehicle = availableVehicles.removeAt(0)
                 chosenVehicle.giveDestinations(destinations)
                 scheduledVehicles += chosenVehicle
 
-                availableVehicles -= chosenVehicle
                 destinations.forEach { customer ->
                     val remaining = remainingCustomerVisits[customer]!! - 1
                     if (remaining == 0) {
@@ -346,6 +348,8 @@ class Simulation {
                 }
 
             }
+
+            println("Destinations distributed among vehicles, ${availableVehicles.size} left")
 
 
 
